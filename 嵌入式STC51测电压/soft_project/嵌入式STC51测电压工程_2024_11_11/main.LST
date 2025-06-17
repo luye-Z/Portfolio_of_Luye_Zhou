@@ -1,0 +1,154 @@
+C51 COMPILER V9.54   MAIN                                                                  12/14/2024 15:07:55 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          // 部分代码借鉴于互联网
+   2          // 测控2202   周禄也   学号：202213630
+   3          // 单片机型号STC89C52RC
+   4          
+   5          //////////////////////////////////////////////////////////////////////////////////////////////////
+   6          
+   7          //              GND    电源地
+   8          //              VCC    接5V或3.3V电源
+   9          //              SCL    P2^0（SCL）
+  10          //              SDA    P2^1（SDA）
+  11          
+  12          
+  13          #include <reg52.h>
+  14          //#include "REG51.h"
+  15          #include "oled.h"
+  16          #include "bmp.h"
+  17          #include <intrins.h>
+  18          #include "Delay.h"
+  19          #include "baojing.h"
+  20          
+  21          
+  22          sbit OE = P3^0;            // ADC0809的OE端连接到51单片机P30
+  23          sbit EOC = P3^1;           // ADC0809的EOC端连接到51单片机P31  
+  24                                     // A/D转换结束信号，输出，当A/D转换结束时，此端输出一个高电平（转换期间一直为低
+             -电平）。
+  25          sbit CLOCK = P2^6;         // ADC0809的CLO连接到51单片机P26 
+  26                                     // CLK：时钟脉冲输入端。要求时钟频率不高于640KHZ。
+  27          sbit ST = P3^2;            // ADC0809的START和ALE
+  28          
+  29          unsigned char dat[4] = {0, 0, 0, 0};  // 显示缓冲区
+  30          unsigned char adc;                  // 存放转换后的数据
+  31          unsigned int input;                 
+  32          
+  33          
+  34          
+  35          void huanying(void)
+  36          {
+  37   1          OLED_ShowCHinese(13, 0, 16);  // 欢迎你！
+  38   1          OLED_ShowCHinese(29, 0, 17); 
+  39   1          OLED_ShowCHinese(45, 0, 18); 
+  40   1          OLED_ShowString(61, 0, "!", 16);   
+  41   1          OLED_ShowString(10, 2, " Hope you have   a good day !", 16); 
+  42   1          
+  43   1          Delay1500ms();
+  44   1      }
+  45          
+  46          
+  47          
+  48          void Delay(void)  // 延时大约83.33μs，防止OLED闪烁
+  49          {
+  50   1          unsigned char i;
+  51   1          for (i = 0; i < 250; i++);
+  52   1      }
+  53          
+  54          // 定时计数器0的中断服务子程序
+C51 COMPILER V9.54   MAIN                                                                  12/14/2024 15:07:55 PAGE 2   
+
+  55          void timer0(void) interrupt 1 using 1  // 255微秒中断一次
+  56          {
+  57   1          CLOCK = ~CLOCK;
+  58   1      }
+  59          
+  60          // 主函数
+  61          int main(void)
+  62          {
+  63   1          EA = 1; 
+  64   1          ET0 = 1; 
+  65   1          TMOD = 0x02;  // T0方式2计时  
+  66   1                         // TH0 作为重装初值寄存器，
+  67   1                         // TL0 作为计数寄存器。当 TL0 计数溢出后，会自动将 TH0 中的值重新装入 TL0 继续计数。
+  68   1          TH0 = 0x01;    // 晶振：12MHz     
+  69   1          TL0 = 0x01;    // 晶振：12MHz     
+  70   1          TR0 = 1;       // 开中断,启动定时器
+  71   1      
+  72   1          OLED_Init();   // 初始化OLED  
+  73   1          OLED_Clear();  
+  74   1          huanying();
+  75   1          OLED_Clear(); 
+  76   1          P0 = 0xFF;
+  77   1          
+  78   1          while (1) 
+  79   1          { 
+  80   2              ST = 0;
+  81   2              ST = 1;
+  82   2              ST = 0;         // 启动转换
+  83   2              while (!EOC);   // 等待转换结束
+  84   2              
+  85   2              OE = 1;         // 允许输出
+  86   2              adc = P1;       // 取转换结果
+  87   2      
+  88   2              // 利用除法取余处理数据
+  89   2              input = adc * 196.08;  // 转换成电压值
+  90   2              dat[3] = input / 10000;    // 取电压数据最高位
+  91   2              dat[2] = input / 1000 % 10;  // 取电压数据小数点后第一位
+  92   2              dat[1] = input / 100 % 10;   // 取电压数据小数点后第二位
+  93   2              dat[0] = input / 10 % 10;    // 取电压数据小数点后第三位
+  94   2              
+  95   2              if ((dat[3] >= 4) && (dat[2] >= 6) || (dat[3] == 5))
+  96   2              {
+  97   3                              
+  98   3                              OLED_Clear(); 
+  99   3                              baojing();        // 调用报警函数
+ 100   3                                      
+ 101   3                              
+ 102   3                              
+ 103   3                 
+ 104   3              }
+ 105   2      
+ 106   2              // OLED 显示转换结果
+ 107   2              OLED_ShowCHinese(20, 0, 0);  // 显示 "电" 字（索引0）  
+ 108   2              OLED_ShowCHinese(36, 0, 1);  // 显示 "压" 字（索引1）  
+ 109   2              OLED_ShowCHinese(52, 0, 15); // 显示 "值" 字（索引15）  
+ 110   2              OLED_ShowString(68, 0, ":", 16);  // 显示小数点
+ 111   2      
+ 112   2              OLED_ShowNum(20, 2, dat[3], 1, 16);  // 显示最高位
+ 113   2              OLED_ShowString(30, 2, ".", 16);     // 显示小数点
+ 114   2              OLED_ShowNum(40, 2, dat[2], 1, 16);  // 小数点后第一位
+ 115   2              OLED_ShowNum(50, 2, dat[1], 1, 16);  // 小数点后第二位
+ 116   2              OLED_ShowNum(60, 2, dat[0], 1, 16);  // 小数点后第三位
+C51 COMPILER V9.54   MAIN                                                                  12/14/2024 15:07:55 PAGE 3   
+
+ 117   2              OLED_ShowString(70, 2, "V", 16);     // 显示单位“V”
+ 118   2              OLED_ShowString(58, 6, "by", 16);
+ 119   2              
+ 120   2              OLED_ShowCHinese(78, 6, 2);  
+ 121   2              OLED_ShowCHinese(94, 6, 3);  
+ 122   2              OLED_ShowCHinese(110, 6, 4);  
+ 123   2      
+ 124   2              Delay();  // 延时，避免闪烁
+ 125   2          }
+ 126   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    428    ----
+   CONSTANT SIZE    =   2089    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

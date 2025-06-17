@@ -1,0 +1,41 @@
+C51 COMPILER V9.54   SHOW                                                                  12/14/2024 14:49:07 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE SHOW
+OBJECT MODULE PLACED IN Show.OBJ
+COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE Show.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND
+
+line level    source
+
+   1                
+   2          #include "oled.h"
+   3          
+   4          // OLED 显示转换结果
+   5          void  show(void)
+   6                  
+   7                  {
+   8   1              OLED_ShowCHinese(20, 0, 0);  // 显示 "电" 字（索引0）  
+   9   1              OLED_ShowCHinese(36, 0, 1);  // 显示 "压" 字（索引1）  
+  10   1              OLED_ShowCHinese(52, 0, 15); // 显示 "值" 字（索引15）  
+  11   1              OLED_ShowString(68, 0, ":", 16);  // 显示小数点
+  12   1      
+  13   1              OLED_ShowNum(20, 2, dat[3], 1, 16);  // 显示最高位
+*** ERROR C202 IN LINE 13 OF Show.c: 'dat': undefined identifier
+  14   1              OLED_ShowString(30, 2, ".", 16);     // 显示小数点
+  15   1              OLED_ShowNum(40, 2, dat[2], 1, 16);  // 小数点后第一位
+*** ERROR C202 IN LINE 15 OF Show.c: 'dat': undefined identifier
+  16   1              OLED_ShowNum(50, 2, dat[1], 1, 16);  // 小数点后第二位
+*** ERROR C202 IN LINE 16 OF Show.c: 'dat': undefined identifier
+  17   1              OLED_ShowNum(60, 2, dat[0], 1, 16);  // 小数点后第三位
+*** ERROR C202 IN LINE 17 OF Show.c: 'dat': undefined identifier
+  18   1              OLED_ShowString(70, 2, "V", 16);     // 显示单位“V”
+  19   1              OLED_ShowString(58, 6, "by", 16);
+  20   1              
+  21   1              OLED_ShowCHinese(78, 6, 2);  
+  22   1              OLED_ShowCHinese(94, 6, 3);  
+  23   1              OLED_ShowCHinese(110, 6, 4);  
+  24   1      
+  25   1              Delay();  // 延时，避免闪烁
+  26   1      }
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  4 ERROR(S)

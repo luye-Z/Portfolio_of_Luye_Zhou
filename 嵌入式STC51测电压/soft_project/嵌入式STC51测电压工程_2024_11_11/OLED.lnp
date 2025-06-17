@@ -1,0 +1,7 @@
+"STARTUP.obj",
+"main.obj",
+"oled.obj",
+"Delay.obj",
+"baojing.obj" 
+TO "OLED" 
+RAMSIZE(256) 

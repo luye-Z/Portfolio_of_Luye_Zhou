@@ -1,0 +1,63 @@
+C51 COMPILER V9.54   BAOJING                                                               12/14/2024 15:07:55 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE BAOJING
+OBJECT MODULE PLACED IN baojing.OBJ
+COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE baojing.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "oled.h"
+   2          #include <reg52.h>
+   3          #include "Delay.h"
+   4          
+   5          void baojing(void)
+   6          {
+   7   1              int count = 0;
+   8   1          OLED_ShowCHinese(5, 2, 5);              // 超出电压报警！！！，请按
+   9   1          OLED_ShowCHinese(21, 2, 6);  
+  10   1          OLED_ShowCHinese(37, 2, 0);    
+  11   1          OLED_ShowCHinese(53, 2, 1);         
+  12   1          OLED_ShowCHinese(69, 2, 7);      
+  13   1          OLED_ShowCHinese(85, 2, 8);  
+  14   1          OLED_ShowString(103, 2, "!!!", 16);  
+  15   1          OLED_ShowCHinese(5, 4, 9);  
+  16   1          OLED_ShowCHinese(21, 4, 10);      
+  17   1          OLED_ShowCHinese(37, 4, 11);  
+  18   1          OLED_ShowCHinese(53, 4, 12);      
+  19   1          OLED_ShowCHinese(69, 4, 13);  
+  20   1          OLED_ShowCHinese(85, 4, 14);  
+  21   1              
+  22   1              
+  23   1               while (1)
+  24   1                  {
+  25   2                      P0 = P0 ^ 0x01;  // 对 P0.0 引脚的状态进行取反
+  26   2                      Delay200ms(); 
+  27   2                                      count++;
+  28   2                                      
+  29   2                                      if(count>=14)
+  30   2                                      {
+  31   3                                              
+  32   3                                      OLED_Clear(); 
+  33   3                                      baojing();   
+*** WARNING C265 IN LINE 33 OF baojing.c: 'baojing': recursive call to non-reentrant function
+  34   3                                      count =0 ;
+  35   3                                              
+  36   3                                      }
+  37   2                      
+  38   2                  }
+  39   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    167    ----
+   CONSTANT SIZE    =      4    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
