@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "stm32f10x.h": "c",
+        "rc522.h": "c",
+        "bsp_ili9341_lcd.h": "c",
+        "stdint.h": "c",
+        "myspi.h": "c",
+        "cstdint": "c",
+        "mlx90614.h": "c",
+        "delay.h": "c",
+        "led.h": "c",
+        "buzzer.h": "c"
+    }
+}
