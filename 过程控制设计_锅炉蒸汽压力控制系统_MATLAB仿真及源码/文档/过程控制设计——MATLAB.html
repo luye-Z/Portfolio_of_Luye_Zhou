@@ -1,0 +1,212 @@
+<!DOCTYPE html><html><head>
+      <title>过程控制设计——MATLAB</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:///c:\Users\23204\.vscode\extensions\shd101wyy.markdown-preview-enhanced-0.8.18\crossnote\dependencies\katex\katex.min.css">
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. --><script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script></head><body for="html-export">
+    
+    
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="设计题目5锅炉蒸汽压力控制系统设计">设计题目5：锅炉蒸汽压力控制系统设计 </h1>
+<hr>
+<p><strong>MATLAB 部分文档</strong><br>
+作者：周禄也</p>
+<hr>
+<h2 id="一-matlab仿真建模部分设计背景与意义">一、MATLAB仿真建模部分设计背景与意义 </h2>
+<p>锅炉蒸汽压力控制系统是工业自动化领域的重要组成部分，其核心任务是让锅炉蒸汽压力始终保持在设定值附近，确保设备安全、稳定运行。设计高效、可靠的控制系统，不仅能提升生产效率，还能降低能耗、保障设备安全。</p>
+<p>目前，PID控制器因其原理简单、性能稳定，在工业控制中应用极为广泛，尤其适用于锅炉蒸汽压力控制系统。在硬件条件一定的情况下，PID参数的整定往往决定了闭环系统的性能优劣。</p>
+<p>本设计将利用MATLAB对锅炉蒸汽压力控制系统进行建模与仿真，主要包括以下几个方面：</p>
+<ul>
+<li><strong>系统建模</strong>：建立锅炉蒸汽压力控制系统的数学模型。</li>
+<li><strong>控制器设计</strong>：设计合适的PID控制器并进行参数整定。</li>
+<li><strong>系统仿真</strong>：用MATLAB对设计好的控制系统进行仿真实验，验证性能。</li>
+<li><strong>结果分析</strong>：分析仿真结果，评价系统的稳定性、响应速度和精度，并与理论分析对比。</li>
+</ul>
+<hr>
+<h2 id="二-设计思路与方法">二、设计思路与方法 </h2>
+<h3 id="21-系统建模">2.1 系统建模 </h3>
+<p>在设计锅炉蒸汽压力控制系统前，需对系统进行详细建模。根据锅炉的工作原理和控制要求，建立数学模型。常用方法有状态空间建模和传递函数建模。</p>
+<h4 id="1-机理法">1. 机理法 </h4>
+<p>机理法基于锅炉系统的物理和化学原理，通过分析结构、能量和物质流动过程，建立数学模型。主要考虑：</p>
+<ul>
+<li><strong>质量守恒</strong>：建立水和蒸汽的质量平衡方程，描述锅炉内水和蒸汽的变化。</li>
+<li><strong>能量守恒</strong>：分析锅炉吸收热量、蒸发过程中的能量转换，建立能量平衡方程。</li>
+<li><strong>动量守恒</strong>：考虑流体在锅炉内的流动特性，建立动量平衡方程。</li>
+</ul>
+<p>实际锅炉系统较为复杂，通常需做如下简化：</p>
+<ul>
+<li>忽略部分较小的时间常数和影响因素；</li>
+<li>对非线性环节进行线性化处理；</li>
+<li>采用集中参数法简化分布参数系统。</li>
+</ul>
+<p>通过上述分析和假设，可推导出锅炉蒸汽压力控制系统的传递函数或状态空间模型，为后续控制器设计和仿真提供理论基础。</p>
+<h4 id="2-实验法">2. 实验法 </h4>
+<p>实验法通过对实际系统进行试验，采集输入输出数据，建立系统模型。常用方法有：</p>
+<ul>
+<li><strong>阶跃响应法</strong>：在系统稳态下施加阶跃输入，记录输出响应曲线。根据曲线特征参数（如上升时间、超调量、稳态值等）估算系统参数。适用于一阶、二阶等简单系统。</li>
+<li><strong>频率响应法</strong>：对系统施加不同频率的正弦信号，测量输出的幅值和相位，绘制幅频和相频特性曲线（波特图），据此拟合系统传递函数。</li>
+<li><strong>系统辨识法</strong>：采集系统在不同工况下的输入输出数据，利用最小二乘法等数学工具进行参数估计和模型拟合，适用于结构复杂或难以直接建模的系统。</li>
+</ul>
+<p>实际工程中，常将机理法和实验法结合使用：</p>
+<ul>
+<li>先用机理法建立系统的基本结构模型，保证物理合理性；</li>
+<li>再通过实验法对模型参数进行修正和优化，提高准确性；</li>
+<li>最后通过仿真和实际运行数据对模型进行验证和完善。</li>
+</ul>
+<p>这种结合方法既能反映系统的物理本质，又能兼顾实际运行的动态特性。</p>
+<hr>
+<h3 id="22-控制器设计">2.2 控制器设计 </h3>
+<p>本次课程设计选用简单实用的PID数字控制器。PID控制器结构清晰，参数整定灵活，能够满足锅炉蒸汽压力控制系统对稳定性和响应速度的要求。</p>
+<hr>
+<h2 id="三-系统结构仿真与分析">三、系统结构仿真与分析 </h2>
+<h3 id="31-系统总体结构">3.1 系统总体结构 </h3>
+<p>本系统采用单闭环控制结构，主要包括：比价器、PID数字控制器、执行器、被控对象、传感变送器。</p>
+<p>锅炉蒸汽压力控制系统的总体结构如下图所示：</p>
+<p><img src="image-1.png" alt="alt text"></p>
+<h3 id="32-系统仿真">3.2 系统仿真 </h3>
+<p>在MATLAB中，采用Simulink进行系统建模和仿真。下图为锅炉蒸汽压力控制系统的Simulink模型示例及仿真效果：</p>
+<p><img src="image.png" alt="alt text"></p>
+<hr>
+<h2 id="四-系统辨识简单小助手开发">四、系统辨识简单小助手开发 </h2>
+<h3 id="40-功能展示">4.0 功能展示 </h3>
+<p>下图展示了“系统辨识简单小助手”的主要界面和功能布局：</p>
+<p><img src="image-2.png" alt="alt text"></p>
+<hr>
+<h3 id="41-设计目标">4.1 设计目标 </h3>
+<p>本模块开发了一个基于MATLAB GUI的“系统辨识简单小助手”，帮助用户通过实验数据点快速完成一阶系统的参数辨识与传递函数拟合。界面直观，操作简便，适合教学和工程初步建模。</p>
+<hr>
+<h3 id="42-功能需求">4.2 功能需求 </h3>
+<ol>
+<li><strong>数据输入功能</strong>
+<ul>
+<li>支持用户逐点输入实验数据（时间T、液位高度Y）。</li>
+<li>提供数据点表格，实时显示已输入的数据。</li>
+<li>支持通过按钮或回车快捷键添加数据点。</li>
+</ul>
+</li>
+<li><strong>参数设定功能</strong>
+<ul>
+<li>支持用户输入和设定水泵OP（操作点）参数。</li>
+<li>OP参数可随时修改，界面有提示反馈。</li>
+</ul>
+</li>
+<li><strong>数据管理功能</strong>
+<ul>
+<li>可清空输入框，便于连续输入。</li>
+<li>支持退出程序。</li>
+</ul>
+</li>
+<li><strong>系统辨识与拟合功能</strong>
+<ul>
+<li>至少输入3组数据后，支持一阶系统的参数拟合。</li>
+<li>自动拟合一阶惯性环节模型：<code>y = K*(1-exp(-t/τ))</code>。</li>
+<li>输出拟合得到的K、τ参数及传递函数表达式。</li>
+<li>在界面和命令行输出结果，并绘制原始数据与拟合曲线对比图。</li>
+</ul>
+</li>
+<li><strong>用户交互与提示</strong>
+<ul>
+<li>对无效输入、数据不足等情况有友好提示。</li>
+<li>操作成功后有反馈信息。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="43-界面设计">4.3 界面设计 </h3>
+<ul>
+<li><strong>主窗口</strong>：包含输入区、参数区、数据表格区、结果显示区和操作按钮区。</li>
+<li><strong>输入区</strong>：时间T、液位高度Y的输入框。</li>
+<li><strong>参数区</strong>：OP输入框及设定按钮。</li>
+<li><strong>数据表格区</strong>：显示已输入的所有数据点。</li>
+<li><strong>结果显示区</strong>：显示拟合得到的传递函数。</li>
+<li><strong>操作按钮区</strong>：添加点、计算、退出等按钮。</li>
+</ul>
+<hr>
+<h3 id="44-主要模块与流程">4.4 主要模块与流程 </h3>
+<ol>
+<li><strong>初始化</strong>
+<ul>
+<li>初始化数据存储数组（X、Y）、OP参数、回车计数器。</li>
+<li>创建GUI各控件并布局。</li>
+</ul>
+</li>
+<li><strong>数据输入与管理</strong>
+<ul>
+<li>用户输入T、Y后，点击“添加点”或按回车，数据自动存入数组并刷新表格。</li>
+<li>输入框自动切换焦点，提升输入效率。</li>
+</ul>
+</li>
+<li><strong>OP参数设定</strong>
+<ul>
+<li>用户输入OP值，点击“设定OP”按钮，系统校验输入有效性并保存。</li>
+</ul>
+</li>
+<li><strong>系统辨识与拟合</strong>
+<ul>
+<li>用户点击“计算”按钮，若数据点数≥3，则进行一阶系统拟合。</li>
+<li>使用MATLAB <code>fit</code>函数，拟合模型<code>y = K*(1-exp(-t/τ))</code>。</li>
+<li>拟合结果（K、τ、传递函数）显示在界面和命令行。</li>
+<li>自动绘制原始数据与拟合曲线对比图。</li>
+</ul>
+</li>
+<li><strong>用户提示与异常处理</strong>
+<ul>
+<li>对无效输入、数据不足等情况，界面有醒目提示。</li>
+<li>操作成功后有确认信息。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="45-关键代码说明">4.5 关键代码说明 </h3>
+<ul>
+<li><strong>数据输入与表格刷新</strong><pre data-role="codeBlock" data-info="matlab" class="language-matlab matlab"><code><span class="token function">X</span><span class="token punctuation">(</span><span class="token keyword keyword-end">end</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">=</span> xVal<span class="token punctuation">;</span>
+<span class="token function">Y</span><span class="token punctuation">(</span><span class="token keyword keyword-end">end</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">=</span> yVal<span class="token punctuation">;</span>
+<span class="token function">set</span><span class="token punctuation">(</span>dataTable<span class="token punctuation">,</span> <span class="token string">'Data'</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token function">X</span><span class="token punctuation">(</span><span class="token operator">:</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">Y</span><span class="token punctuation">(</span><span class="token operator">:</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre></li>
+<li><strong>OP参数设定</strong><pre data-role="codeBlock" data-info="matlab" class="language-matlab matlab"><code>OP <span class="token operator">=</span> <span class="token function">str2double</span><span class="token punctuation">(</span><span class="token function">get</span><span class="token punctuation">(</span>opEdit<span class="token punctuation">,</span> <span class="token string">'String'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre></li>
+<li><strong>一阶系统拟合</strong><pre data-role="codeBlock" data-info="matlab" class="language-matlab matlab"><code>fit_type <span class="token operator">=</span> <span class="token function">fittype</span><span class="token punctuation">(</span><span class="token string">'K * (1 - exp(-x / tau))'</span><span class="token punctuation">,</span> <span class="token punctuation">...</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">[</span>fit_result<span class="token punctuation">,</span> gof<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">fit</span><span class="token punctuation">(</span><span class="token function">X</span><span class="token punctuation">(</span><span class="token operator">:</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">Y</span><span class="token punctuation">(</span><span class="token operator">:</span><span class="token punctuation">)</span><span class="token punctuation">,</span> fit_type<span class="token punctuation">,</span> <span class="token string">'StartPoint'</span><span class="token punctuation">,</span> initial_guess<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre></li>
+<li><strong>结果输出与绘图</strong><pre data-role="codeBlock" data-info="matlab" class="language-matlab matlab"><code>tfStr <span class="token operator">=</span> <span class="token function">sprintf</span><span class="token punctuation">(</span><span class="token string">'G(s) = %.2f / (%.2fs + 1)'</span><span class="token punctuation">,</span> K<span class="token punctuation">,</span> tau<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">set</span><span class="token punctuation">(</span>tfOutput<span class="token punctuation">,</span> <span class="token string">'String'</span><span class="token punctuation">,</span> tfStr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">plot</span><span class="token punctuation">(</span>X<span class="token punctuation">,</span> Y<span class="token punctuation">,</span> <span class="token string">'bo'</span><span class="token punctuation">,</span> <span class="token punctuation">...</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">plot</span><span class="token punctuation">(</span>x_fit<span class="token punctuation">,</span> y_fit<span class="token punctuation">,</span> <span class="token string">'r-'</span><span class="token punctuation">,</span> <span class="token punctuation">...</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre></li>
+</ul>
+<hr>
+<h3 id="46-设计亮点与改进建议">4.6 设计亮点与改进建议 </h3>
+<ul>
+<li>交互友好，适合初学者和工程人员快速上手。</li>
+<li>支持实验数据的可视化和一键拟合，极大提升辨识效率。</li>
+<li>可扩展性强，后续可增加多阶系统辨识、数据导入导出等功能。</li>
+</ul>
+<hr>
+
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+    </body></html>
