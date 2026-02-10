@@ -1,0 +1,5 @@
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple, https://www.piwheels.org/simple
+Requirement already satisfied: openvino in /home/pi/projects/yolo26/yolo26/lib/python3.13/site-packages (2025.4.1)
+Requirement already satisfied: numpy<2.4.0,>=1.16.6 in /usr/lib/python3/dist-packages (from openvino) (2.2.4)
+Requirement already satisfied: openvino-telemetry>=2023.2.1 in /home/pi/projects/yolo26/yolo26/lib/python3.13/site-packages (from openvino) (2025.2.0)
+Requirement already satisfied: packaging in /usr/lib/python3/dist-packages (from openvino) (25.0)
