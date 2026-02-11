@@ -33,8 +33,8 @@ buzzer_active = threading.Event()
 
 # Hardware PWM 初始化 (舵机)
 # Chip 0, Channel 0 为 Tilt, Channel 1 为 Pan
-servo_tilt = HardwarePWM(pwm_channel=0, hz=50, chip=0)
-servo_pan = HardwarePWM(pwm_channel=1, hz=50, chip=0)
+servo_tilt = HardwarePWM(pwm_channel=0, hz=50, chip=0)   #GPIO12 
+servo_pan = HardwarePWM(pwm_channel=1, hz=50, chip=0)    #GPIO13
 servo_tilt.start(7.5) # 归中
 servo_pan.start(7.5)  # 归中
 

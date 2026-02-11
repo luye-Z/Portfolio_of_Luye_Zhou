@@ -7,8 +7,8 @@ from rpi_hardware_pwm import HardwarePWM
 CHIP_ID = 0  
 # GPIO 12 -> PWM0_CHAN0 -> channel 0 (TILT 轴)
 # GPIO 13 -> PWM0_CHAN1 -> channel 1 (PAN 轴)
-TILT_CHANNEL = 0
-PAN_CHANNEL = 1
+TILT_CHANNEL = 0 #GPIO12
+PAN_CHANNEL = 1 #GPIO13
 
 def set_angle(pwm_obj, angle):
     """将角度(-90到90)映射为硬件占空比(2.5到12.5)"""
@@ -36,24 +36,41 @@ def main():
         
         # 从 -90° 到 +90°
         for angle in range(0, 91, 1):  #range 的范围，包含起点不包含终点
-            set_angle(servo_pan, angle)
+            # set_angle(servo_pan, angle)
             set_angle(servo_tilt, angle)
             print(f"当前角度: {angle:+4d}°", end='\r')
-            time.sleep(0.2)
-        
-        # 从 +90° 到 -90°
-        for angle in range(90, -91, -1):
-            set_angle(servo_pan, angle)
-            set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
-            time.sleep(0.2)
+            time.sleep(0.05)
             
-        # 从 +90° 到 -90°
-        for angle in range(-90, 1, 1):
+        for angle in range(0, 91, 1):  #range 的范围，包含起点不包含终点
             set_angle(servo_pan, angle)
+            # set_angle(servo_tilt, angle)
+            print(f"当前角度: {angle:+4d}°", end='\r')
+            time.sleep(0.05)
+            
+        for angle in range(90, -1, -1):  #range 的范围，包含起点不包含终点
+            # set_angle(servo_pan, angle)
             set_angle(servo_tilt, angle)
             print(f"当前角度: {angle:+4d}°", end='\r')
-            time.sleep(0.2)
+            time.sleep(0.05)
+            
+        for angle in range(90, -1, -1):  #range 的范围，包含起点不包含终点
+            set_angle(servo_pan, angle)
+            # set_angle(servo_tilt, angle)
+            print(f"当前角度: {angle:+4d}°", end='\r')
+            time.sleep(0.05)
+        # # 从 +90° 到 -90°
+        # for angle in range(90, -91, -1):
+        #     set_angle(servo_pan, angle)
+        #     set_angle(servo_tilt, angle)
+        #     print(f"当前角度: {angle:+4d}°", end='\r')
+        #     time.sleep(0.2)
+            
+        # # 从 +90° 到 -90°
+        # for angle in range(-90, 1, 1):
+        #     set_angle(servo_pan, angle)
+        #     set_angle(servo_tilt, angle)
+        #     print(f"当前角度: {angle:+4d}°", end='\r')
+        #     time.sleep(0.2)
         
         # 回到中心位置
         print("\n返回中心位置 (0°)...")
