@@ -7,7 +7,8 @@ from ultralytics import YOLO
 picam2 = Picamera2() #Picamera2 是模块里面定义的一个类，picam2 是我们自己定义的一个实例
 #IMX219 camera
 config = picam2.create_preview_configuration(main={
-    "size": (int(1640*2), int(1232*2)),  #深度优化代码，提升模型运行速度
+    # "size": (int(1640*0.52), int(1232*0.52)),  #深度优化代码，提升模型运行速度
+    "size": (864, 640),
     "format": "RGB888"
 })# 创建config配置：    
 
