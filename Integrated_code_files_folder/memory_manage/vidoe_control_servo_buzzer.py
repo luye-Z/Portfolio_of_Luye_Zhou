@@ -88,12 +88,16 @@ try:
         annotated_frame = frame.copy()
         current_frame_valid = False
         target_x, target_y = None, None
+        confidence = 0.0  # 默认置信度为0
 
         # 解析检测
         for result in results:  # 遍历生成器返回的每一帧检测结果
             for box in result.boxes:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 w, h = x2 - x1, y2 - y1
+
+                # 获取置信度
+                confidence = box.conf[0].item()
 
                 # 过滤异常大框
                 if w >= (SCREEN_WIDTH * 0.7) or h >= (SCREEN_HEIGHT * 0.7):
@@ -148,7 +152,14 @@ try:
                       (410 - cv_dz_x, 308 - cv_dz_y), 
                       (410 + cv_dz_x, 308 + cv_dz_y), (255, 255, 0), 1)
         
-        cv2.imshow("Pi5 Tracking System", display_frame)
+        # 绘制置信度文本
+        if current_frame_valid:
+            # 选择不同颜色以增加对比度
+            cv2.putText(annotated_frame, f"Confidence: {confidence*100:.2f}%", 
+                        (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+        
+        # 使用annotated_frame显示带置信度的图像
+        cv2.imshow("Pi5 Tracking System", annotated_frame)
 
         if cv2.waitKey(1) == ord("q"):
             break
