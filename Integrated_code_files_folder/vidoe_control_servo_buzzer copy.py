@@ -8,8 +8,8 @@ import time
 
 # —————————————————————————————— 0. 配置区域 ——————————————————————————————
 # 画面分辨率
-SCREEN_WIDTH = 864
-SCREEN_HEIGHT = 640
+SCREEN_WIDTH = 1640
+SCREEN_HEIGHT = 1232
 
 # 舵机追踪配置
 DEG_PER_PIX = 77.0 / SCREEN_WIDTH  # 像素转角度比例
@@ -52,7 +52,7 @@ picam2.configure(config)
 picam2.start()
 
 # 模型加载
-model = YOLO("/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model", task='detect')
+model = YOLO("yolo26n_01_24_quadcopter_best_ncnn_model", task='detect')
 
 # —————————————————————————————— 2. 功能函数 ——————————————————————————————
 
@@ -83,7 +83,7 @@ try:
     while True:
         frame = picam2.capture_array()
         # NCNN 推理提升树莓派5帧率
-        results = model(frame, imgsz=640, conf=0.25, verbose=False)
+        results = model(frame, imgsz=320, conf=0.25, verbose=False)
         
         annotated_frame = frame.copy()
         current_frame_valid = False

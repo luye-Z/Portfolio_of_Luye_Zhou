@@ -82,21 +82,21 @@ print("系统就绪: YOLO + 舵机追踪 + 延迟蜂鸣器")
 try:
     while True:
         frame = picam2.capture_array()
-        # NCNN 推理提升树莓派5帧率
-        results = model(frame, imgsz=640, conf=0.25, verbose=False)
-        
+        # 启用 stream 模式
+        results = model(frame, imgsz=640, conf=0.3, verbose=False, stream=True)
+
         annotated_frame = frame.copy()
         current_frame_valid = False
         target_x, target_y = None, None
 
         # 解析检测
-        for result in results:
+        for result in results:  # 遍历生成器返回的每一帧检测结果
             for box in result.boxes:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 w, h = x2 - x1, y2 - y1
 
                 # 过滤异常大框
-                if w >= (SCREEN_WIDTH * 0.9) or h >= (SCREEN_HEIGHT * 0.9):
+                if w >= (SCREEN_WIDTH * 0.7) or h >= (SCREEN_HEIGHT * 0.7):
                     continue
 
                 current_frame_valid = True

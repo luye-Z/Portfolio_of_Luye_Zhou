@@ -7,8 +7,8 @@ import sys
 
 # —————————————————————————————— 配置区域 ——————————————————————————————
 # 1. 屏幕与FOV配置
-SCREEN_WIDTH = 1640
-SCREEN_HEIGHT = 1232
+SCREEN_WIDTH = 864
+SCREEN_HEIGHT = 640
 # DEG_PER_PIX: 像素转角度的比例。
 # 如果追踪反应太慢，可以稍微调大这个值；如果震荡，调小这个值。
 DEG_PER_PIX = 77.0 / SCREEN_WIDTH  
@@ -46,7 +46,7 @@ picam2.start()
 
 # 2. 模型加载
 print("正在加载 YOLO 模型...")
-model = YOLO("yolo26n_01_24_quadcopter_best_ncnn_model", task='detect')
+model = YOLO("/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model", task='detect')
 
 # 3. 舵机初始化
 CHIP_ID = 0  

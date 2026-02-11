@@ -67,8 +67,14 @@ try:
         cv2.imshow("YOLO OpenVINO Detection", annotated_frame)
         
         #======================================
-        #新增内存管理
-        del annotated_frame
+        # 在 cv2.imshow 之后
+        # 1. 强制切断结果对象对原始图片的“占有”
+        results[0].orig_img = None 
+        
+        # 2. 将大变量直接赋值为 None（这比 del 更能直接触发 Python 的回收机制）
+        results = None
+        annotated_frame = None
+        frame = None
         #====================================
         if cv2.waitKey(1) == ord("q"):
             break
