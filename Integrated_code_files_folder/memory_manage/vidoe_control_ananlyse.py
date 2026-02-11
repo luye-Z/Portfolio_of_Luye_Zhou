@@ -33,14 +33,14 @@ buzzer_active = threading.Event()
 
 # Hardware PWM 初始化 (舵机)
 # Chip 0, Channel 0 为 Tilt, Channel 1 为 Pan
-servo_tilt = HardwarePWM(pwm_channel=0, hz=50, chip=0)   #GPIO12 
-servo_pan = HardwarePWM(pwm_channel=1, hz=50, chip=0)    #GPIO13
-servo_tilt.start(7.5) # 归中
-servo_pan.start(7.5)  # 归中
+servo_tilt = HardwarePWM(pwm_channel=1, hz=50, chip=0)   #GPIO12 
+servo_pan = HardwarePWM(pwm_channel=0, hz=50, chip=0)    #GPIO13
+servo_tilt.start(12.5)  #初始化，设置+90度
+servo_pan.start(7.5)  # 0度
 
 # 运行角度记录
 servo_pan_angle = 0.0
-servo_tilt_angle = 0.0
+servo_tilt_angle = 90.0
 
 # 相机初始化
 picam2 = Picamera2()
@@ -131,7 +131,7 @@ try:
 
             # TILT 轴控制
             if abs(error_y) > DEAD_ZONE_Y:
-                servo_tilt_angle += (error_y * DEG_PER_PIX) * Kp_TILT
+                servo_tilt_angle -= (error_y * DEG_PER_PIX) * Kp_TILT
                 set_servo_angle(servo_tilt, servo_tilt_angle)
 
         # --- B. 蜂鸣器延迟告警逻辑 ---
