@@ -4,7 +4,8 @@ from mpu6050 import mpu6050
 
 # --- MPU6050 传感器处理类 ---
 class SimpleMPU:
-    def __init__(self, address, name):
+    def __init__(self, address, name):  #两个参数 
+        """ 构造函数，初始化传感器 """
         self.address = address
         self.name = name
         try:
@@ -55,7 +56,7 @@ class SimpleMPU:
 # --- 主程序入口 ---
 if __name__ == "__main__":
     # 初始化双传感器
-    mpu_a = SimpleMPU(0x68, "A")
+    mpu_a = SimpleMPU(0x68, "A")  
     mpu_b = SimpleMPU(0x69, "B")
     
     # 启动前执行校准（必须保持静止）

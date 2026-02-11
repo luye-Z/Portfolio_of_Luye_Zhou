@@ -30,38 +30,42 @@ def main():
         
         print("硬件通道已开启。开始同步扫描测试...")
         print("按 Ctrl+C 停止测试")
-        
-        # 单次扫描测试
-        print("\n开始单次扫描...")
-        
-        # 从 -90° 到 +90°
-        for angle in range(0, 91, 1):  #range 的范围，包含起点不包含终点
-            set_angle(servo_pan, angle)
-            set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
-            time.sleep(0.2)
-        
-        # 从 +90° 到 -90°
-        for angle in range(90, -91, -1):
-            set_angle(servo_pan, angle)
-            set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
-            time.sleep(0.2)
-            
-        # 从 +90° 到 -90°
-        for angle in range(-90, 1, 1):
-            set_angle(servo_pan, angle)
-            set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
-            time.sleep(0.2)
-        
-        # 回到中心位置
-        print("\n返回中心位置 (0°)...")
+        print("给两个舵机角度归零")
         set_angle(servo_pan, 0)
         set_angle(servo_tilt, 0)
-        time.sleep(1)
+        time.sleep(3)
+        print("角度设定完毕")
+        # # 单次扫描测试
+        # print("\n开始单次扫描...")
         
-        print("单次扫描完成！")
+        # # 从 -90° 到 +90°
+        # for angle in range(0, 91, 1):
+        #     set_angle(servo_pan, angle)
+        #     set_angle(servo_tilt, angle)
+        #     print(f"当前角度: {angle:+4d}°", end='\r')
+        #     time.sleep(0.02)
+        
+        # # 从 +90° 到 -90°
+        # for angle in range(91, -91, -1):
+        #     set_angle(servo_pan, angle)
+        #     set_angle(servo_tilt, angle)
+        #     print(f"当前角度: {angle:+4d}°", end='\r')
+        #     time.sleep(0.02)
+            
+        # # 从 +90° 到 -90°
+        # for angle in range(-91, 0, 1):
+        #     set_angle(servo_pan, angle)
+        #     set_angle(servo_tilt, angle)
+        #     print(f"当前角度: {angle:+4d}°", end='\r')
+        #     time.sleep(0.02)
+        
+        # # 回到中心位置
+        # print("\n返回中心位置 (0°)...")
+        # set_angle(servo_pan, 0)
+        # set_angle(servo_tilt, 0)
+        # time.sleep(1)
+        
+        # print("单次扫描完成！")
         
     except KeyboardInterrupt:
         print("\n测试由用户停止")
