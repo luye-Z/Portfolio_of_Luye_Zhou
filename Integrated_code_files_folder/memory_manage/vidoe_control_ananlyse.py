@@ -15,8 +15,8 @@ SCREEN_HEIGHT = 640
 DEG_PER_PIX = 77.0 / SCREEN_WIDTH  # 像素转角度比例
 Kp_PAN = 0.2                       # 水平平滑系数
 Kp_TILT = 0.15                     # 垂直平滑系数
-DEAD_ZONE_X = 40                   # 水平死区（像素）
-DEAD_ZONE_Y = 40                   # 垂直死区（像素）
+DEAD_ZONE_X = 20                   # 水平死区（像素）
+DEAD_ZONE_Y = 20                  # 垂直死区（像素）
 
 # 舵机物理限位
 SERVO_MIN, SERVO_MAX = -90, 90
@@ -127,11 +127,15 @@ try:
             # PAN 轴控制
             if abs(error_x) > DEAD_ZONE_X:
                 servo_pan_angle -= (error_x * DEG_PER_PIX) * Kp_PAN
+                servo_pan_angle = max(SERVO_MIN, min(SERVO_MAX, servo_pan_angle))
+                print(f"expect pan angle = {servo_pan_angle} ")
                 set_servo_angle(servo_pan, servo_pan_angle)
 
             # TILT 轴控制
             if abs(error_y) > DEAD_ZONE_Y:
-                servo_tilt_angle -= (error_y * DEG_PER_PIX) * Kp_TILT
+                servo_tilt_angle += (error_y * DEG_PER_PIX) * Kp_TILT
+                servo_tilt_angle = max(SERVO_MIN, min(SERVO_MAX, servo_tilt_angle))
+                print(f"expect tilt angle = {servo_tilt_angle} ")
                 set_servo_angle(servo_tilt, servo_tilt_angle)
 
         # --- B. 蜂鸣器延迟告警逻辑 ---
@@ -188,6 +192,9 @@ finally:
     print("\n正在释放资源...")
     buzzer_active.clear()
     picam2.stop()
+    set_servo_angle(servo_tilt, 90)
+    set_servo_angle(servo_pan,0 )
+    time.sleep(1.5)
     servo_pan.stop()
     servo_tilt.stop()
     cv2.destroyAllWindows()
