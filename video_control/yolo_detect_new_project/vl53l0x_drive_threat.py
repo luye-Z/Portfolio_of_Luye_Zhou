@@ -58,7 +58,7 @@ class VL53L0X_Threaded:
             except Exception as e:
                 # print(f"[Sensor] 读取错误: {e}")
                 time.sleep(1) # 出错时等待稍长一点
-
+    
     def start(self):
         """启动测距线程"""
         if not self._running:
@@ -71,7 +71,32 @@ class VL53L0X_Threaded:
         self._running = False
         if hasattr(self, '_thread'):
             self._thread.join()
-
+    
+    def cleanup(self):
+        """释放所有资源（停止线程 + 关闭I2C总线）
+        
+        使用示例：
+            sensor = VL53L0X_Threaded()
+            sensor.start()
+            try:
+                # 使用传感器...
+                pass
+            finally:
+                sensor.cleanup()  # 释放所有资源
+        """
+        # 1. 停止测距线程
+        self.stop()
+        
+        # 2. 关闭 I2C 总线
+        if self.bus is not None:
+            try:
+                self.bus.close()
+                print("[Sensor] I2C总线已关闭")
+            except Exception as e:
+                print(f"[Sensor] 关闭I2C总线时出错: {e}")
+            finally:
+                self.bus = None
+    
     @property
     def distance(self):
         """主程序通过此属性获取最新距离，无需等待"""
@@ -95,5 +120,6 @@ if __name__ == "__main__":
             time.sleep(0.5)
             
     except KeyboardInterrupt:
-        sensor.stop()
+        print("\n[退出] 收到中断信号")
+        sensor.cleanup()  # 使用 cleanup 释放所有资源
         print("程序退出")

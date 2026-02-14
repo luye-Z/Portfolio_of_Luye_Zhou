@@ -21,7 +21,7 @@ if __name__ == "__main__":
     try:
         while True:
             # 调用YOLODetector的detect_frame方法，检测一帧图像
-            result, annotated_frame = detector.detect_frame(draw_annotations=True)
+            result, annotated_frame = detector.detect_frame()
             
             if detector.get_target_detected():
                 
@@ -38,10 +38,11 @@ if __name__ == "__main__":
                 buzzer.stop_alarm()
                 
             # 显示标注后的画面
-            cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (detector.SCREEN_WIDTH, detector.SCREEN_HEIGHT)))
+            # cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (detector.SCREEN_WIDTH, detector.SCREEN_HEIGHT)))
             
-            if cv2.waitKey(1) == ord('q'):
-                break
+            # if cv2.waitKey(1) == ord('q'):
+            #     break
     finally:
         detector.stop()
         buzzer.cleanup()
+        laser_sensor.cleanup()

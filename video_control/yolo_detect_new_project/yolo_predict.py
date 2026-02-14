@@ -34,7 +34,7 @@ class YOLODetector:
         
         self.target_center_x = self.SCREEN_WIDTH/2
         self.target_center_y = self.SCREEN_HEIGHT/2
-
+        
         
     def get_target_detected(self):
         """获取是否检测到目标"""
@@ -57,7 +57,13 @@ class YOLODetector:
         self.picam2.stop()
         cv2.destroyAllWindows()
 
-    def detect_frame(self, draw_annotations=True):
+    def detect_frame(self):
+        """检测一帧图像
+        
+        返回:
+            result: YOLO检测结果
+            frame: 原始图像帧（未绘制标注）
+        """
         self.target_detected = False 
         frame = self.picam2.capture_array() #通过树莓派摄像头捕获一帧图像
         
@@ -71,13 +77,11 @@ class YOLODetector:
         self.frame_counts += 1
         self.total_inference_time += result.speed['inference']
 
-        # 1. 判定逻辑,主要是存储的被检测目标的框的数据
+        # 判定逻辑,主要是存储的被检测目标的框的数据
         # 这里主要是读取result.boxes中框的 宽和高 ，判断被检测目标是不是过大目标，是否过滤
         self.target_detected = False
         if len(result.boxes) > 0:
             # 遍历所有检测框，找到第一个符合尺寸要求的
-            # 绘图逻辑是所有符合条件的框都要画出来，
-            # dectect逻辑，也就是控制逻辑 只是只保留第一个符合条件的框
             for i in range(len(result.boxes)):
                 x, y, w, h = result.boxes.xywh[i].tolist()
                 
@@ -95,72 +99,9 @@ class YOLODetector:
                 # 所有框都不符合尺寸要求
                 self.target_detected = False
         
-        # 2. 智能绘图逻辑
-        # 只有在【要求画图】且【真的检测到有效目标】时，才调用画图函数
-        if draw_annotations and self.target_detected:
-            annotated_frame = self.draw_annotations(frame, result)
-        else:
-            # 否则直接给原图，不浪费 CPU 去跑 draw_annotations 里的循环和矩形渲染
-            annotated_frame = frame 
-
-        return result, annotated_frame
+        # 直接返回原始帧，不绘制标注
+        return result, frame
     
-    def draw_annotations(self, frame, result):
-        """使用OpenCV轻量级绘制检测框和标签
-        
-        参数:
-            frame: 原始图像帧
-            result: YOLO检测结果
-            
-        返回:
-            annotated_frame: 绘制了检测框的图像
-        """
-        # 复制原始帧，避免修改原图
-        annotated_frame = frame.copy()
-        
-        # 获取检测结果
-        boxes = result.boxes
-        
-        if boxes is not None and len(boxes) > 0:
-            # 遍历所有检测框
-            for i, box in enumerate(boxes):
-                # 获取边界框坐标
-                x1, y1, x2, y2 = box.xyxy[0].tolist()
-                confidence = box.conf[0].item()
-                w = x2 - x1
-                h = y2 - y1
-                
-                # 过滤低置信度检测（虽然模型已经过滤，但这里再次确认）
-                if confidence < self.conf:
-                    continue
-                
-                # 尺寸过滤：只绘制小于画面55%的框
-                if w >= 0.55 * self.SCREEN_WIDTH or h >= 0.55 * self.SCREEN_HEIGHT:
-                    continue
-                
-                # 绘制检测框（绿色）
-                cv2.rectangle(annotated_frame, 
-                              (int(x1), int(y1)), 
-                              (int(x2), int(y2)), 
-                              (0, 255, 0), 2)
-                
-                # 绘制置信度标签（黄色）
-                label = f"{confidence*100:.1f}%"
-                label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
-                
-                # 绘制标签背景
-                cv2.rectangle(annotated_frame,
-                              (int(x1), int(y1) - label_size[1] - 10),
-                              (int(x1) + label_size[0], int(y1)),
-                              (0, 255, 255), -1)
-                
-                # 绘制标签文字
-                cv2.putText(annotated_frame, label,
-                           (int(x1), int(y1) - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-        
-        return annotated_frame
-
     def _print_report(self, duration):
         """内部方法：打印简化性能报告"""
         if self.frame_counts > 0:
@@ -182,10 +123,10 @@ if __name__ == "__main__":
     
     try:
         while True:
-            result, annotated_frame = detector.detect_frame(draw_annotations=True)
+            result, frame = detector.detect_frame()
             
-            # 显示标注后的画面
-            cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (820, 616)))
+            # 显示原始画面（无标注）
+            cv2.imshow("YOLO Detection (Raw)", cv2.resize(frame, (820, 616)))
             
             if cv2.waitKey(1) == ord('q'):
                 break
