@@ -4,7 +4,7 @@
 Design Verification (DV) Software for Raspberry Pi 5 Hardware System
 硬件系统设计验证软件 - 树莓派5
 
-功能：验证各个硬件模块的协同工作，快速检测硬件连接和功能是否正常
+功能：验证各个硬件模块的协同工作,快速检测硬件连接和功能是否正常
 设计原则：模块化、高内聚、低耦合、易读性
 """
 
@@ -19,6 +19,8 @@ from PIL import ImageFont, ImageDraw
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import ssd1306
+
+import neopixel #导入RGB_LED需要的库
 # =============================================================================
 # 硬件配置常量 (根据README.md中的连接信息)
 # =============================================================================
@@ -32,6 +34,7 @@ class HardwareConfig:
     GPIO_LED_DIN = 18       # RGB LED DIN GPIO18
     GPIO_MPU6050_1_INT = 7  # MPU6050_1中断引脚GPIO7
     GPIO_MPU6050_2_INT = 24 # MPU6050_2中断引脚GPIO24
+    GPIO_RGB_LED_DIN = 18   #引脚GPIO18连接 RGB_LED的 DIN
     
     # PWM配置
     PWM_CHIP_ID = 0
@@ -49,8 +52,8 @@ class HardwareConfig:
 # 测试结果枚举和数据结构
 # =============================================================================
 
-class TestStatus(Enum):
-    """测试状态枚举"""
+class TestStatus(Enum): #定义一个枚举类
+    """测试状态枚举,这是一个枚举类"""
     NOT_STARTED = "未开始"
     RUNNING = "进行中"
     PASSED = "通过"
@@ -59,13 +62,15 @@ class TestStatus(Enum):
 
 class TestResult:
     """单个测试结果类"""
-    def __init__(self, name: str, description: str = ""):
+    def __init__(self, name: str, description: str = ""): #构造函数,两个参数 一个是 name,一个是description , 
+            #这里还涉及到type-hint , 就是 name : 后面的 "str" , description:后面的 "str"
+            #这两个type-hind代表着参数类型, str="" 代表着默认参数是"",即为一个空字符串,这个参数可以不输入,即为可选
         self.name = name
         self.description = description
-        self.status = TestStatus.NOT_STARTED
-        self.duration = 0.0
+        self.status = TestStatus.NOT_STARTED #这里调用了枚举类 TestStatus 枚举类很特殊,不需要实例化,直接调用
+        self.duration = 0.0 
         self.error_message = ""
-        self.timestamp = 0.0
+        self.timestamp = 0.0 #时间戳
     
     def set_passed(self, duration: float):
         """设置测试通过"""
@@ -190,7 +195,7 @@ class PWMHardwareModule(HardwareModule):
             for angle in range(0, -91, -1):  # 0, -1, -2, ..., -90
                 self._set_servo_angle(self.servo_1, angle)
                 self._set_servo_angle(self.servo_2, angle)
-                time.sleep(0.05)  # 每度间隔50ms，让运动更平滑
+                time.sleep(0.05)  # 每度间隔50ms,让运动更平滑
             
             # 从-90度一度一度转到90度
             print("舵机从-90度转到90度...")
@@ -303,7 +308,7 @@ class MPU6050HardwareModule(HardwareModule):
     def _test_functionality_impl(self) -> Tuple[bool, str]:
         """测试MPU6050传感器功能（基于你的实际测试数据）"""
         try:
-            # 读取多组数据求平均，减少噪声影响
+            # 读取多组数据求平均,减少噪声影响
             test_samples = 10
             accel_sum = [0, 0, 0]
             gyro_sum = [0, 0, 0]
@@ -327,7 +332,7 @@ class MPU6050HardwareModule(HardwareModule):
             
             # **修正测试条件（基于你的实际数据）**
             # 静止状态下：
-            # - 加速度计：X/Y接近0，Z接近-1g，合成值接近1g
+            # - 加速度计：X/Y接近0,Z接近-1g,合成值接近1g
             # - 陀螺仪：三轴都应该在±1°/s以内（你的数据在±0.5°/s以内）
             
             # 检查加速度计数据
@@ -623,6 +628,77 @@ class BuzzerHardwareModule(HardwareModule):
         except:
             pass
 
+class RGBLEDHardwareModule(HardwareModule):
+    """RGB LED模块 - WS2812B-5050RGB"""
+    
+    def __init__(self):
+        super().__init__("RGB LED")
+        self.pixels = None
+        self.num_pixels = 10
+        self.ORDER = neopixel.GRB
+    
+    def _initialize_impl(self) -> bool:
+        """初始化RGB LED"""
+        try:
+            import board
+            
+            pixel_pin = board.D18
+            
+            self.pixels = neopixel.NeoPixel(
+                pixel_pin, self.num_pixels, brightness=0.2, auto_write=False, pixel_order=self.ORDER
+            )
+            
+            print("✅ RGB LED初始化成功")
+            return True
+            
+        except ImportError:
+            self.last_error = "未找到 board 或 neopixel 库"
+            return False
+        except Exception as e:
+            self.last_error = f"RGB LED初始化失败: {str(e)}"
+            return False
+    
+    def _test_functionality_impl(self) -> Tuple[bool, str]:
+        """测试RGB LED功能"""
+        try:
+            colors = [
+                ("红色", (255, 0, 0)),
+                ("绿色", (0, 255, 0)),
+                ("蓝色", (0, 0, 255)),
+                ("紫色", (128, 0, 128)),
+                ("黄色", (255, 255, 0)),
+                ("橙色", (255, 165, 0)),
+                ("粉色", (255, 192, 203)),
+                ("青色", (0, 255, 255)),
+                ("深蓝色", (0, 0, 139)),
+                ("淡紫色", (230, 230, 250)),
+                ("淡蓝色", (173, 216, 230)),
+                ("草绿色", (124, 252, 0)),
+                ("玫瑰红", (255, 0, 127)),
+                ("深红色", (139, 0, 0)),
+                ("天蓝色", (135, 206, 235)),
+                ("金色", (255, 215, 0)),
+                ("浅绿色", (144, 238, 144)),
+                ("浅橙色", (255, 204, 153))
+            ]
+            
+            for color_name, color_rgb in colors:
+                print(color_name)
+                self.pixels.fill(color_rgb)
+                self.pixels.show()
+                time.sleep(1)
+            
+            return True, "RGB LED测试通过 - 显示18种颜色"
+            
+        except Exception as e:
+            return False, f"RGB LED测试失败: {str(e)}"
+    
+    def _cleanup_impl(self):
+        """清理RGB LED资源"""
+        if self.pixels:
+            self.pixels.fill((0, 0, 0))
+            self.pixels.show()
+
 # =============================================================================
 # DV测试管理器
 # =============================================================================
@@ -650,7 +726,8 @@ class DVTestManager:
             MPU6050HardwareModule(2),
             OLEDHardwareModule(),
             ButtonHardwareModule(),
-            BuzzerHardwareModule()
+            BuzzerHardwareModule(),
+            RGBLEDHardwareModule()
         ]
         
         # 初始化每个模块
@@ -741,7 +818,7 @@ class DVTestManager:
         if self.overall_status == TestStatus.PASSED:
             print("🎉 所有硬件模块测试通过！系统就绪。")
         else:
-            print("⚠️  部分测试失败，请检查硬件连接。")
+            print("⚠️  部分测试失败,请检查硬件连接。")
     
     def cleanup(self):
         """清理所有硬件资源"""

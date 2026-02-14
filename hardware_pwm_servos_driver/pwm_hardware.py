@@ -38,35 +38,39 @@ def main():
         print("\n开始单次扫描...")
         
         # 从 -90° 到 +90°
+        
         for angle in range(90, -91 , -1):  #range 的范围，包含起点不包含终点
             # set_angle(servo_pan, angle)
             set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
+            print(f"舵机选择：servo_tilt，当前角度: {angle:+4d}°", end='\r')
             time.sleep(SERVO_STEP_DELAY)
             
+        
         for angle in range(-90, 91 , 1):  #range 的范围，包含起点不包含终点
             # set_angle(servo_pan, angle)
             set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
+            print(f"舵机选择：servo_tilt，当前角度: {angle:+4d}°", end='\r')
             time.sleep(SERVO_STEP_DELAY)
             
-            
+        
         for angle in range(0, -91 , -1):  #range 的范围，包含起点不包含终点
             set_angle(servo_pan, angle)
             #set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
+            print(f"舵机选择：servo_pan，当前角度: {angle:+4d}°", end='\r')
             time.sleep(SERVO_STEP_DELAY)
             
+        
         for angle in range(-90, 91 , 1):  #range 的范围，包含起点不包含终点
             set_angle(servo_pan, angle)
             #set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
+            print(f"舵机选择：servo_pan，当前角度: {angle:+4d}°", end='\r')
             time.sleep(SERVO_STEP_DELAY)
             
+        
         for angle in range(90, -1 , -1):  #range 的范围，包含起点不包含终点
             set_angle(servo_pan, angle)
             #set_angle(servo_tilt, angle)
-            print(f"当前角度: {angle:+4d}°", end='\r')
+            print(f"舵机选择：servo_pan，当前角度: {angle:+4d}°", end='\r')
             time.sleep(SERVO_STEP_DELAY)
             
             
@@ -102,9 +106,12 @@ def main():
         #     time.sleep(0.2)
         
         # 回到中心位置
-        print("\n返回中心位置 (0°)...")
+        print("\n返回中心位置 ")
         set_angle(servo_pan, 0)
         set_angle(servo_tilt, 90)
+        print(f"servo_pan 角度: {0:+4d}°")
+        print(f"servo_tilt 角度: {90:+4d}°")
+        
         time.sleep(1)
         
         print("单次扫描完成！")
