@@ -30,10 +30,19 @@ class YOLODetector:
         
         #4.数据成员，是否检测到目标，布尔变量，标志位
         self.target_detected = False 
+        #5. 目标中心坐标
+        
+        self.target_center_x = self.SCREEN_WIDTH/2
+        self.target_center_y = self.SCREEN_HEIGHT/2
+
         
     def get_target_detected(self):
         """获取是否检测到目标"""
         return self.target_detected
+    
+    def get_target_center(self):
+        """获取目标中心坐标"""
+        return self.target_center_x, self.target_center_y
     
     def start(self):
         """启动相机"""
@@ -76,6 +85,10 @@ class YOLODetector:
                 if w < 0.55 * self.SCREEN_WIDTH and h < 0.55 * self.SCREEN_HEIGHT:
                     self.target_detected = True
                     self.target_w, self.target_h = w, h
+                    #更新中心点坐标，存在数据成员里面
+                    self.target_center_x = x
+                    self.target_center_y = y
+                    
                     self.target_index = i  # 记录符合条件的框的索引
                     break  # 找到第一个就停止
             else:
