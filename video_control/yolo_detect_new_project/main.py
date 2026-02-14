@@ -1,6 +1,9 @@
 import cv2
 from yolo_predict import YOLODetector
 from buzzer_driver import BuzzerController
+from vl53l0x_drive_threat import VL53L0X_Threaded
+
+
 if __name__ == "__main__":
     #模型路径
     MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
@@ -11,16 +14,22 @@ if __name__ == "__main__":
     # 创建蜂鸣器控制器实例
     buzzer = BuzzerController()
     
+    # 创建VL53L0X_Threaded实例
+    laser_sensor = VL53L0X_Threaded()
+    laser_sensor.start()  # 启动测距线程
+    
     try:
         while True:
             # 调用YOLODetector的detect_frame方法，检测一帧图像
             result, annotated_frame = detector.detect_frame(draw_annotations=True)
+            
             if detector.get_target_detected():
                 
                 print("目标检测到")
                 # 启动蜂鸣器报警
                 buzzer.start_alarm()
-                
+                current_d = laser_sensor.distance
+                print(f"激光测距距离: {current_d} mm")
                 obj_target_center_x, obj_target_center_y = detector.get_target_center()
                 print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
             else:
