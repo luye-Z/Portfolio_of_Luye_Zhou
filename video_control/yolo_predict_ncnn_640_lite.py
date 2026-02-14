@@ -3,12 +3,126 @@ import time
 from picamera2 import Picamera2
 from ultralytics import YOLO
 from rpi_hardware_pwm import HardwarePWM
+import RPi.GPIO as GPIO
+import threading
+from smbus2 import SMBus
+#写在最前面的话；
+# =============================================================================
+#当前本是基于轻量化YOLO推荐脚本作为基底，抛弃之前冗杂低效的综合代码，重写新版本的综合控制代码，
+#可读性与效率优先
+#版本号 ：v0.2
+#log : 测试蜂鸣器控制线程成功
+#      正在测试添加激光测距功能
+#
+#
+#
+#
+#
+# =============================================================================
 
 # =============================================================================
 # GPIO 初始化
 # =============================================================================
+BUZZER_PIN = 25  # 蜂鸣器连接的GPIO引脚（BCM编号）
+# 初始化GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUZZER_PIN, GPIO.OUT)
+# =============================================================================
+# 蜂鸣器线程相关
+# =============================================================================
+buzzer_active = threading.Event() 
 
+def buzzer_handler():
+    while True:
+       
+        buzzer_active.wait()
+        while buzzer_active.is_set():
+           
+            GPIO.output(BUZZER_PIN, GPIO.HIGH)
+            time.sleep(0.1)
+            GPIO.output(BUZZER_PIN, GPIO.LOW)
+            time.sleep(0.1)
 
+buzzer_thread = threading.Thread(target=buzzer_handler, daemon=True)
+buzzer_thread.start()
+# =============================================================================
+# 激光测距初始化
+# =============================================================================
+class VL53L0X_Lite:
+    def __init__(self, address=0x29, bus_id=1):
+        self.address = address
+        self.bus = SMBus(bus_id)
+        self._setup()
+
+    def _setup(self):
+        self.bus.write_byte_data(self.address, 0x88, 0x00)
+        self.bus.write_byte_data(self.address, 0x80, 0x01)
+        self.bus.write_byte_data(self.address, 0xFF, 0x01)
+        self.bus.write_byte_data(self.address, 0x00, 0x00)
+        self.bus.write_byte_data(self.address, 0x91, 0x3c)
+        self.bus.write_byte_data(self.address, 0x00, 0x01)
+        self.bus.write_byte_data(self.address, 0xFF, 0x00)
+        self.bus.write_byte_data(self.address, 0x80, 0x00)
+
+    def get_distance(self):
+        self.bus.write_byte_data(self.address, 0x00, 0x01)
+        
+        count = 0
+        while (self.bus.read_byte_data(self.address, 0x14) & 0x01) == 0:
+            time.sleep(0.01)
+            count += 1
+            if count > 100: return -1
+            
+        data = self.bus.read_i2c_block_data(self.address, 0x14, 12)
+        dist = (data[10] << 8) | data[11]
+        
+        self.bus.write_byte_data(self.address, 0x0B, 0x01)
+        
+        return dist
+    
+distance_sensor = VL53L0X_Lite()
+
+# 创建激光测距数据共享变量
+# 使用全局变量在主线程和传感器线程之间共享距离数据
+current_distance = None  # 当前距离值（毫米）
+distance_lock = threading.Lock()  # 线程锁，保护读取 distance_lock这个数据
+
+# =============================================================================
+# 激光测距读取线程
+# =============================================================================
+
+def laser_distance_reader():
+    
+    global current_distance, distance_lock
+    
+    while True:
+        try:
+            # 读取距离数据
+            dist = distance_sensor.get_distance()
+            
+            # 使用线程锁保护共享变量
+            with distance_lock:
+                current_distance = dist
+            
+            # 短暂休眠，避免占用过多CPU
+            # 休眠时间：50ms = 20Hz采样率
+            time.sleep(0.05)
+            
+        except Exception as e:
+            # 读取失败时，设置距离为None
+            with distance_lock:
+                current_distance = None
+            # 休眠后重试
+            time.sleep(0.1)
+
+# 启动激光测距读取线程
+# daemon=True: 设置为守护线程，主程序退出时自动结束
+# 资源开销：极小，线程在sleep()状态时不占用CPU
+laser_thread = threading.Thread(target=laser_distance_reader, daemon=True)
+laser_thread.start()
+
+print("VL53L0X 激光测距传感器初始化成功")
+print("激光测距读取线程已启动！")
 # =============================================================================
 # 1. 硬件配置部分
 # =============================================================================
@@ -185,8 +299,8 @@ try:
             confidence = box.conf[0].item()  # 获取置信度
 
             # 过滤过大的检测框（可能是误检或目标太近）
-            # 如果检测框超过屏幕的70%，则跳过
-            if w >= (SCREEN_WIDTH * 0.7) or h >= (SCREEN_HEIGHT * 0.7):
+            # 如果检测框超过屏幕的55%，则跳过
+            if w >= (SCREEN_WIDTH * 0.55) or h >= (SCREEN_HEIGHT * 0.55):
                 continue
 
             # 标记当前帧有效
@@ -207,6 +321,19 @@ try:
             cv2.putText(annotated_frame, label, 
                         (int(x1), int(y1)-10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+            # 绘制距离信息（激光测距）
+            # 使用线程锁安全获取距离数据
+            with distance_lock:
+                dist = current_distance
+            
+            # 如果有有效距离数据，在检测框旁边显示
+            if dist is not None and dist > 0:
+                # 距离显示位置：检测框右下角下方
+                dist_text = f"Dist: {dist}mm"
+                cv2.putText(annotated_frame, dist_text, 
+                            (int(x1), int(y2)+20), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 255), 2)
 
             # 只处理第一个有效目标，避免多个目标干扰
             break
@@ -253,6 +380,20 @@ try:
                 
                 # 控制舵机旋转到新角度
                 set_servo_angle(servo_tilt, servo_tilt_angle)
+
+        # =============================================================================
+        # 8. 蜂鸣器报警逻辑
+        # =============================================================================
+        
+        # 如果检测到有效目标，激活蜂鸣器报警
+        if current_frame_valid:
+            # set(): 设置Event，通知蜂鸣器线程开始报警
+            # 资源开销：极小，只是设置一个标志位
+            buzzer_active.set()
+        else:
+            # clear(): 清除Event，通知蜂鸣器线程停止报警
+            # 资源开销：极小，只是清除一个标志位
+            buzzer_active.clear()
 
         # 在图像上绘制实时FPS信息
         # (30, 60): 文字位置（左上角）
