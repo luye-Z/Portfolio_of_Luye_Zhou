@@ -13,7 +13,7 @@ def cv_show(frame, results,sys):
     :return: 是否按下退出键 (True/False)
     """
     # 直接在原始帧的副本上绘制，保持分辨率一致
-    annotated_frame = frame.copy()
+    # annotated_frame = frame.copy()
     
     # 1. 绘制检测框
     if len(results[0].boxes) > 0:
@@ -29,15 +29,15 @@ def cv_show(frame, results,sys):
                 continue
 
             # 画矩形框 (绿色，线条宽度为2)
-            cv2.rectangle(annotated_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            cv2.rectangle(fram, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
             
             # 简易标签 (类别ID + 置信度)
             label = f"ID:{cls} {conf:.2f}"
-            cv2.putText(annotated_frame, label, (int(x1), int(y1) - 10), 
+            cv2.putText(fram, label, (int(x1), int(y1) - 10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # 2. 直接显示（不缩放，保持最高清晰度）
-    cv2.imshow("YOLO Detection", annotated_frame)
+    cv2.imshow("YOLO Detection", fram)
     
     # 3. 退出逻辑
     if cv2.waitKey(1) == ord("q"):
