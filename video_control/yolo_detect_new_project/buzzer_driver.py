@@ -25,7 +25,7 @@ class BuzzerController:
         """内部线程函数：处理蜂鸣逻辑"""
         while not self._stop_event.is_set():
             # 等待激活信号 (wait 会挂起线程，不占CPU)
-            if self._active_event.wait(timeout=0.5):
+            if self._active_event.wait(timeout=0.5):#这行执行成功了，进入下一段，否则继续等待
                 # 产生“滴滴”声
                 while self._active_event.is_set() and not self._stop_event.is_set():
                     GPIO.output(self.buzzer_pin, GPIO.HIGH)
@@ -55,13 +55,25 @@ class BuzzerController:
         # 但可以在这里确保当前引脚关闭
         GPIO.output(self.buzzer_pin, GPIO.LOW)
 
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cleanup()
+        return False
+    
+    def __del__(self):
+        self.cleanup()
+        
+        
 # =============================================================================
 # 单元测试 (使用方法演示)
 # =============================================================================
 if __name__ == "__main__":
-    buzzer = BuzzerController()
+    with BuzzerController() as buzzer:
+    # buzzer = BuzzerController()
     
-    try:
+
         while True:
             cmd = input("输入 s(开始) / e(停止) / q(退出): ").lower()
             if cmd == 's':
@@ -70,6 +82,3 @@ if __name__ == "__main__":
                 buzzer.stop_alarm()
             elif cmd == 'q':
                 break
-    finally:
-        buzzer.cleanup()
-        GPIO.cleanup()

@@ -56,6 +56,20 @@ class YOLODetector:
         self._print_report(duration)
         self.picam2.stop()
         cv2.destroyAllWindows()
+    
+    def cleanup(self):
+        """释放所有资源（同 stop）
+        
+        使用示例：
+            detector = YOLODetector(MODEL_PATH)
+            detector.start()
+            try:
+                # 使用检测器...
+                pass
+            finally:
+                detector.cleanup()  # 释放所有资源
+        """
+        self.stop()
 
     def detect_frame(self):
         """检测一帧图像
@@ -114,21 +128,75 @@ class YOLODetector:
             print(f"Average FPS: {avg_fps:.2f}")
             print(f"Average Inference Time: {avg_inference:.2f}ms")
             print("="*40)
+    
+    def __enter__(self):
+        """上下文管理器入口
+        
+        使用示例：
+            with YOLODetector(MODEL_PATH) as detector:
+                detector.start()
+                # 使用检测器...
+        """
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """上下文管理器出口
+        
+        自动调用 cleanup() 释放资源
+        """
+        self.cleanup()
+        return False
+    
+    def __del__(self):
+        """析构函数，确保资源释放
+        
+        防止忘记调用 cleanup() 导致资源泄漏
+        """
+        try:
+            self.cleanup()
+        except Exception:
+            pass
+
 
 # --- 单元测试 ---
 if __name__ == "__main__":
     MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
+    
+    # 方式1：使用with语句（推荐）
+    print("=" * 50)
+    print("测试1：使用 with 语句")
+    print("=" * 50)
+    with YOLODetector(MODEL_PATH) as detector:
+        detector.start()
+        try:
+            for i in range(5):
+                result, frame = detector.detect_frame()
+                if detector.get_target_detected():
+                    x, y = detector.get_target_center()
+                    print(f"  测试 {i+1}: ✅ 目标检测到 - 中心: ({x:.1f}, {y:.1f})")
+                else:
+                    print(f"  测试 {i+1}: ❌ 未检测到目标")
+                time.sleep(0.5)
+        finally:
+            # with 语句会自动调用 cleanup()，不需要手动写
+            pass
+    
+    # 方式2：手动管理
+    print("\n" + "=" * 50)
+    print("测试2：手动管理")
+    print("=" * 50)
     detector = YOLODetector(MODEL_PATH)
     detector.start()
-    
     try:
-        while True:
+        for i in range(5):
             result, frame = detector.detect_frame()
-            
-            # 显示原始画面（无标注）
-            cv2.imshow("YOLO Detection (Raw)", cv2.resize(frame, (820, 616)))
-            
-            if cv2.waitKey(1) == ord('q'):
-                break
+            if detector.get_target_detected():
+                x, y = detector.get_target_center()
+                print(f"  测试 {i+1}: ✅ 目标检测到 - 中心: ({x:.1f}, {y:.1f})")
+            else:
+                print(f"  测试 {i+1}: ❌ 未检测到目标")
+            time.sleep(0.5)
     finally:
-        detector.stop()
+        detector.cleanup()  # 手动释放资源
+    
+    print("\n测试完成！")
