@@ -36,6 +36,33 @@ class YOLODetector:
         self.target_center_y = self.SCREEN_HEIGHT/2
         
         
+        
+        # 标志位，用于计数，是否调用YOLO—detect_frame方法,只有两种状态，另一种状态直接调用预估像素坐标数据进行控制
+        self.yolo_detect_turn = True   
+        
+        #SMART CONTROL 参数预先存储
+        self.smart_last_target_center_x = self.SCREEN_WIDTH/2
+        self.smart_last_target_center_y = self.SCREEN_HEIGHT/2
+        self.smart_now_target_center_x = self.SCREEN_WIDTH/2
+        self.smart_now_target_center_y = self.SCREEN_HEIGHT/2
+    
+    def update_smart_control_params(self):
+        
+        """更新SMART CONTROL 参数"""
+        """这个参数更新只在 实际执行yolo_detect 轮次执行"""
+        self.smart_last_target_center_x = self.smart_now_target_center_x
+        self.smart_last_target_center_y = self.smart_now_target_center_y
+        self.smart_now_target_center_x = self.get_target_center_x()
+        self.smart_now_target_center_y = self.get_target_center_y()
+        # 切换标志位,
+        yolo_detect_turn = not yolo_detect_turn
+        
+        
+    def get_yolo_detect_turn(self):
+        """获取self.yolo_detect_turn的接口方法"""
+        return self.yolo_detect_turn
+        
+        
     def get_target_detected(self):
         """获取是否检测到目标"""
         return self.target_detected
