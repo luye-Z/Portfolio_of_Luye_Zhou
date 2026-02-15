@@ -55,12 +55,22 @@ if __name__ == "__main__":
         # 2. 只在循环外调用一次 detect_frame，避免重复调用
         result, annotated_frame = sys.detector.detect_frame()
         
+
+        
         while True:
             # 3. 检查是否需要切换到智能控制模式
-            if sys.detector.get_yolo_detect_turn():
+            
+            #测试代码
+            print(sys.detector.get_yolo_detect_turn())
+            print(sys.detector.get_yolo_detect_turn())
+            print(sys.detector.get_yolo_detect_turn())
+            
+            
+            if not sys.detector.get_yolo_detect_turn():
+                
                 # 智能控制模式：不调用 detect_frame，直接使用预估坐标
                 print("智能控制模式")
-                
+                sys.detector.reverse_yolo_detect_turn()
                 # 获取预估坐标
                 smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
                 
@@ -73,41 +83,50 @@ if __name__ == "__main__":
                 )
                 
                 # 更新智能控制参数
-                sys.detector.update_smart_control_params()
+                
             else:
-                # YOLO 检测模式：调用 detect_frame
+                
                 print("YOLO 检测模式")
+                #更新数据，并且翻转YOLO检测模式
+
+                # YOLO 检测模式：调用 detect_frame
+                
                 
                 # 调用 YOLO 检测（只调用一次！）
                 result, annotated_frame = sys.detector.detect_frame()
-            
+                
+                sys.detector.update_smart_control_params()
+                sys.detector.reverse_yolo_detect_turn()
+                
+                # 更新智能控制参数
+                
             # 4. 检查是否检测到目标
-            if sys.detector.get_target_detected():
-                sys.oled.text(f"objection detected !", size=12)
-                sys.rgb_led.set_color_name("red")
+                if sys.detector.get_target_detected():
+                    sys.oled.text(f"objection detected !", size=12)
+                    sys.rgb_led.set_color_name("red")
+                    
+                    # 调用舵机控制器跟踪目标
+                    obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+                    sys.servo_controller.track_target(
+                        obj_target_center_x, 
+                        obj_target_center_y, 
+                        sys.detector.SCREEN_WIDTH, 
+                        sys.detector.SCREEN_HEIGHT
+                    )
+                    
+                    # 启动蜂鸣器报警
+                    sys.buzzer.start_alarm()
+                    current_d = sys.laser_sensor.distance
+                    print(f"激光测距距离: {current_d} mm")
+                    obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+                    print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+                else:
+                    print("未检测到目标")
+                    # 停止蜂鸣器报警
+                    sys.buzzer.stop_alarm()
+                    sys.rgb_led.set_color_name("green")
+                    sys.oled.clear()
                 
-                # 调用舵机控制器跟踪目标
-                obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-                sys.servo_controller.track_target(
-                    obj_target_center_x, 
-                    obj_target_center_y, 
-                    sys.detector.SCREEN_WIDTH, 
-                    sys.detector.SCREEN_HEIGHT
-                )
-                
-                # 启动蜂鸣器报警
-                sys.buzzer.start_alarm()
-                current_d = sys.laser_sensor.distance
-                print(f"激光测距距离: {current_d} mm")
-                obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-                print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
-            else:
-                print("未检测到目标")
-                # 停止蜂鸣器报警
-                sys.buzzer.stop_alarm()
-                sys.rgb_led.set_color_name("green")
-                sys.oled.clear()
-            
             # 5. 调用 CV 屏幕显示逻辑
             quit_flag = cv_show(annotated_frame, result, sys)
             

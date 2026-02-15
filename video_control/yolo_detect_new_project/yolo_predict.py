@@ -50,11 +50,15 @@ class YOLODetector:
         
         """更新SMART CONTROL 参数"""
         """这个参数更新只在 实际执行yolo_detect 轮次执行"""
+        
         self.smart_last_target_center_x = self.smart_now_target_center_x
         self.smart_last_target_center_y = self.smart_now_target_center_y
         self.smart_now_target_center_x = self.get_target_center_x()
         self.smart_now_target_center_y = self.get_target_center_y()
-        # 切换标志位,
+        
+        # 切换标志位
+    def reverse_yolo_detect_turn(self):
+        """切换YOLO检测模式"""
         self.yolo_detect_turn = not self.yolo_detect_turn
     
     def get_smart_control_params(self):
