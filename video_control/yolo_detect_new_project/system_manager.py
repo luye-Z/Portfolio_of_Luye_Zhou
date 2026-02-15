@@ -31,7 +31,13 @@ class SystemManager:
         self.detector.cleanup()
         self.servo_controller.cleanup()
         self.rgb_led.cleanup()
-        print("[System] 所有资源已安全释放")
+        
+        
+        
+        print("[System] 所有硬件资源已安全释放")
+        # 彻底解决 __del__ 报错：手动切断引用，防止解释器再次尝试销毁
+        self.buzzer = None 
+        self.detector = None
 
 # # 使用时
 # with SystemManager() as sys:
