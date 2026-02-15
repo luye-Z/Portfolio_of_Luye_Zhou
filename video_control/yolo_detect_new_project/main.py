@@ -44,7 +44,7 @@ def cv_show(frame, results, sys):
     # 3. 直接显示（不缩放，保持最高清晰度）
     cv2.imshow("YOLO Detection", annotated_frame)
 
-    # 4. 退出逻辑
+    #4. 退出逻辑
     if cv2.waitKey(1) == ord("q"):
         return True
     return False
@@ -58,12 +58,21 @@ if __name__ == "__main__":
             # 调用YOLODetector的detect_frame方法，检测一帧图像
             result, annotated_frame = sys.detector.detect_frame()
             
+#========================================================================
             #调用CV显示逻辑
-            cv_show(annotated_frame, result,sys)
+            quit_flag = cv_show(annotated_frame, result, sys)
             
+            # 3. 如果返回 True（按下了 Q），则跳出循环
+            if quit_flag:
+                print("检测到退出信号，正在关闭系统...")
+                break
+            # #调用CV显示逻辑
+            # cv_show(annotated_frame, result,sys)
+            
+#========================================================================
             
             if sys.detector.get_target_detected():
-                
+                sys.rgb_led.set_color_name("red")
                 #调用舵机控制器跟踪目标
                 sys.servo_controller.track_target( sys.detector.get_target_center_x(), sys.detector.get_target_center_y(), sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
                 
@@ -78,7 +87,7 @@ if __name__ == "__main__":
                 print("未检测到目标")
                 # 停止蜂鸣器报警
                 sys.buzzer.stop_alarm()
-                sys.rgb_led.off()
+                sys.rgb_led.set_color_name("green")
                 
             # 显示标注后的画面
             # cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (detector.SCREEN_WIDTH, detector.SCREEN_HEIGHT)))

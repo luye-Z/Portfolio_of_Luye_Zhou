@@ -13,7 +13,7 @@ class SystemManager:
         self.laser_sensor = VL53L0X_Threaded()
         self.detector = YOLODetector(MODEL_PATH)
         self.servo_controller = ServoController()
-        self.rgb_led = LEDController(num_pixels=10, brightness=0.2)
+        self.rgb_led = LEDController( brightness=0.01)
         
     def __enter__(self):
         # 统一进入，如果有初始化顺序要求，可以在这里控制
