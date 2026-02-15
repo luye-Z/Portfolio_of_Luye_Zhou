@@ -29,15 +29,15 @@ def cv_show(frame, results,sys):
                 continue
 
             # 画矩形框 (绿色，线条宽度为2)
-            cv2.rectangle(fram, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
             
             # 简易标签 (类别ID + 置信度)
             label = f"ID:{cls} {conf:.2f}"
-            cv2.putText(fram, label, (int(x1), int(y1) - 10), 
+            cv2.putText(frame, label, (int(x1), int(y1) - 10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # 2. 直接显示（不缩放，保持最高清晰度）
-    cv2.imshow("YOLO Detection", fram)
+    cv2.imshow("YOLO Detection", frame)
     
     # 3. 退出逻辑
     if cv2.waitKey(1) == ord("q"):
