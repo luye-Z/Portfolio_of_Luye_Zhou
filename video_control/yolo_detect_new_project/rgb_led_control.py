@@ -18,12 +18,31 @@ class LEDController:
             auto_write=False, 
             pixel_order=neopixel.GRB
         )
-        self.off() # 初始化为关闭状态
+        self.off()  # 初始化为关闭状态
 
-    def set_color(self, r, g, b):
+        # 定义常用颜色
+        self.colors = {
+            "red": (255, 0, 0),
+            "green": (0, 255, 0),
+            "blue": (0, 0, 255),
+            "yellow": (255, 255, 0),
+            "magenta": (255, 0, 255),
+            "cyan": (0, 255, 255),
+            "white": (255, 255, 255),
+            "black": (0, 0, 0)
+            }
+
+    def set_color_rgb(self, r, g, b):
         """设置全灯带为统一颜色 (0-255)"""
         self.pixels.fill((r, g, b))
         self.pixels.show()
+        
+    def set_color_name(self, color_name):
+        """设置全灯带为统一颜色 (颜色名称)"""
+        if color_name in self.colors:
+            self.set_color_rgb(*self.colors[color_name])
+        else:
+            print(f"颜色 {color_name} 不存在")
 
     def set_pixel(self, index, r, g, b):
         """设置单个灯珠颜色"""
@@ -78,34 +97,20 @@ if __name__ == "__main__":
     
     # 使用 with 语句确保即使报错也能安全关闭 LED
     with LEDController(num_pixels=10, brightness=0.2) as led:
-        try:
-            # 1. 基础颜色循环测试
-            colors = [
-                (255, 0, 0),   # 红
-                (0, 255, 0),   # 绿
-                (0, 0, 255),   # 蓝
-                (255, 255, 0)  # 黄
-            ]
-            
-            for c in colors:
-                print(f"Setting color to RGB{c}")
-                led.set_color(*c)
-                time.sleep(0.5)
-
-            # 2. 逐个点亮测试 (流水灯效果)
-            print("Running Chase effect...")
-            led.off()
-            for i in range(led.num_pixels):
-                led.set_pixel(i, 255, 100, 0) # 橙色点亮
-                time.sleep(0.1)
-            
-            # 3. 非阻塞彩虹步进测试 (模拟主循环)
-            print("Running Rainbow step test (Non-blocking)...")
-            for step in range(255):
-                led.rainbow_step(step)
-                time.sleep(0.01) # 模拟 100FPS 的主循环速度
-
-            print("Test Completed Successfully!")
-
-        except KeyboardInterrupt:
-            print("\nTest interrupted by user.")
+        
+        led.set_color_name("red")
+        time.sleep(0.5)
+        led.set_color_name("green")
+        time.sleep(0.5)
+        led.set_color_name("blue")
+        time.sleep(0.5)
+        led.set_color_name("yellow")
+        time.sleep(0.5)
+        led.set_color_name("magenta")
+        time.sleep(0.5)
+        led.set_color_name("cyan")
+        time.sleep(0.5)
+        led.set_color_name("white")
+        time.sleep(0.5)
+        led.set_color_name("black")
+        time.sleep(0.5)

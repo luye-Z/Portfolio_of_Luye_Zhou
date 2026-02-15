@@ -3,6 +3,7 @@ from buzzer_driver import BuzzerController
 from vl53l0x_drive_threat import VL53L0X_Threaded
 from oled_driver import OLED_Driver
 from pwm_servos_control import ServoController
+from rgb_led_control import LEDController
 
 class SystemManager:
     def __init__(self):
@@ -12,6 +13,7 @@ class SystemManager:
         self.laser_sensor = VL53L0X_Threaded()
         self.detector = YOLODetector(MODEL_PATH)
         self.servo_controller = ServoController()
+        self.rgb_led = LEDController(num_pixels=10, brightness=0.2)
         
     def __enter__(self):
         # 统一进入，如果有初始化顺序要求，可以在这里控制
@@ -28,6 +30,7 @@ class SystemManager:
         self.laser_sensor.cleanup()
         self.detector.cleanup()
         self.servo_controller.cleanup()
+        self.rgb_led.cleanup()
         print("[System] 所有资源已安全释放")
 
 # # 使用时

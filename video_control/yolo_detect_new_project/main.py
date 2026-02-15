@@ -78,6 +78,7 @@ if __name__ == "__main__":
                 print("未检测到目标")
                 # 停止蜂鸣器报警
                 sys.buzzer.stop_alarm()
+                sys.rgb_led.off()
                 
             # 显示标注后的画面
             # cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (detector.SCREEN_WIDTH, detector.SCREEN_HEIGHT)))
