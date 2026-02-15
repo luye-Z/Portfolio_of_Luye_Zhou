@@ -71,18 +71,20 @@ if __name__ == "__main__":
                 # 智能控制模式：不调用 detect_frame，直接使用预估坐标
                 print("智能控制模式")
                 sys.detector.reverse_yolo_detect_turn()
-                # 获取预估坐标
-                smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
                 
-                # 调用舵机控制器跟踪目标
-                sys.servo_controller.track_target(
-                    smart_predicted_target_center_xy_tuple[0], 
-                    smart_predicted_target_center_xy_tuple[1], 
-                    sys.detector.SCREEN_WIDTH, 
-                    sys.detector.SCREEN_HEIGHT
-                )
-                
-                # 更新智能控制参数
+                if sys.detector.get_target_detected():
+                    # 获取预估坐标
+                    smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
+                    
+                    # 调用舵机控制器跟踪目标
+                    sys.servo_controller.track_target(
+                        smart_predicted_target_center_xy_tuple[0], 
+                        smart_predicted_target_center_xy_tuple[1], 
+                        sys.detector.SCREEN_WIDTH, 
+                        sys.detector.SCREEN_HEIGHT
+                    )
+                    
+                    # 更新智能控制参数
                 
             else:
                 
