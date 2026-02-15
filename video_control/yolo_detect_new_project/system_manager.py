@@ -28,8 +28,8 @@ class SystemManager:
         self.detector.cleanup()
         print("[System] 所有资源已安全释放")
 
-# 使用时
-with SystemManager() as sys:
-    while True:
-        results = model.detect(sys.camera.read())
-        sys.oled.draw_text(...)
+# # 使用时
+# with SystemManager() as sys:
+#     while True:
+#         results = sys.model.detect(sys.camera.read())
+#         sys.oled.draw_text(...)

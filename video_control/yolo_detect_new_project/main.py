@@ -1,48 +1,46 @@
 import cv2
-from yolo_predict import YOLODetector
-from buzzer_driver import BuzzerController
-from vl53l0x_drive_threat import VL53L0X_Threaded
+# from yolo_predict import YOLODetector
+# from buzzer_driver import BuzzerController
+# from vl53l0x_drive_threat import VL53L0X_Threaded
 
+from system_manager import SystemManager
 
 if __name__ == "__main__":
     #模型路径
-    MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
+    # MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
     
-    detector = YOLODetector(MODEL_PATH)  #创建YOLODetector对象实例
-    detector.start()  #启动树莓派相机
+    # detector = YOLODetector(MODEL_PATH)  #创建YOLODetector对象实例
+    # detector.start()  #启动树莓派相机
     
-    # 创建蜂鸣器控制器实例
-    buzzer = BuzzerController()
+    # # 创建蜂鸣器控制器实例
+    # buzzer = BuzzerController()
     
-    # 创建VL53L0X_Threaded实例
-    laser_sensor = VL53L0X_Threaded()
-    laser_sensor.start()  # 启动测距线程
-    
-    try:
+    # # 创建VL53L0X_Threaded实例
+    # laser_sensor = VL53L0X_Threaded()
+    # laser_sensor.start()  # 启动测距线程
+    with SystemManager() as sys:
+       
         while True:
             # 调用YOLODetector的detect_frame方法，检测一帧图像
-            result, annotated_frame = detector.detect_frame()
+            result, annotated_frame = sys.detector.detect_frame()
             
-            if detector.get_target_detected():
+            if sys.detector.get_target_detected():
                 
                 print("目标检测到")
                 # 启动蜂鸣器报警
-                buzzer.start_alarm()
-                current_d = laser_sensor.distance
+                sys.buzzer.start_alarm()
+                current_d = sys.laser_sensor.distance
                 print(f"激光测距距离: {current_d} mm")
-                obj_target_center_x, obj_target_center_y = detector.get_target_center()
+                obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
                 print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
             else:
                 print("未检测到目标")
                 # 停止蜂鸣器报警
-                buzzer.stop_alarm()
+                sys.buzzer.stop_alarm()
                 
             # 显示标注后的画面
             # cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (detector.SCREEN_WIDTH, detector.SCREEN_HEIGHT)))
             
             # if cv2.waitKey(1) == ord('q'):
             #     break
-    finally:
-        detector.stop()
-        buzzer.cleanup()
-        laser_sensor.cleanup()
+     
