@@ -7,7 +7,7 @@ from luma.core.render import canvas
 from luma.oled.device import ssd1306
 
 
-class OLEDDisplay:
+class OLED_Driver:
     """
     OLED屏幕显示类
     用于在SSD1306 OLED屏幕上显示文本，支持多线程非阻塞显示
@@ -154,11 +154,20 @@ class OLEDDisplay:
         """
         self.stop()
         self.clear()
+        
+        
+    def cleanup(self):
+        """
+        清理资源
+        """
+        self.stop()
+        self.clear()
+        print("OLED驱动已清理")
 
 
 if __name__ == '__main__':
     # 使用方式1：直接调用
-    display = OLEDDisplay()
+    display = OLED_Driver()
     display.start()
     
     # 主程序可以继续执行其他操作，不会被阻塞

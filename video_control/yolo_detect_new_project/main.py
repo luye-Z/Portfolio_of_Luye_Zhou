@@ -20,7 +20,11 @@ def cv_show(frame, results, sys):
         # 没有检测到目标，直接返回
         cv2.imshow("YOLO Detection", annotated_frame)
         return False
-
+    
+    if cv2.waitKey(1) == ord("q"):
+        return True
+    
+    
     # 2. 绘制检测框
     for box in results[0].boxes:
         # 获取坐标
@@ -60,18 +64,22 @@ if __name__ == "__main__":
             
 #========================================================================
             #调用CV显示逻辑
+            
+            
+            
             quit_flag = cv_show(annotated_frame, result, sys)
             
             # 3. 如果返回 True（按下了 Q），则跳出循环
             if quit_flag:
                 print("检测到退出信号，正在关闭系统...")
                 break
-            # #调用CV显示逻辑
-            # cv_show(annotated_frame, result,sys)
+
             
 #========================================================================
             
             if sys.detector.get_target_detected():
+                
+                sys.oled.display_text(f"objection detected !", fontsize=12, duration=2)
                 sys.rgb_led.set_color_name("red")
                 #调用舵机控制器跟踪目标
                 sys.servo_controller.track_target( sys.detector.get_target_center_x(), sys.detector.get_target_center_y(), sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
@@ -88,6 +96,7 @@ if __name__ == "__main__":
                 # 停止蜂鸣器报警
                 sys.buzzer.stop_alarm()
                 sys.rgb_led.set_color_name("green")
+                sys.oled.clear()
                 
             # 显示标注后的画面
             # cv2.imshow("YOLO Detection (Lightweight)", cv2.resize(annotated_frame, (detector.SCREEN_WIDTH, detector.SCREEN_HEIGHT)))
