@@ -1,186 +1,272 @@
 import os
 import time
 import threading
-from PIL import Image, ImageFont, ImageDraw
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import ssd1306
-
+import queue
 
 class OLED_Driver:
-    """
-    OLED屏幕显示类
-    用于在SSD1306 OLED屏幕上显示文本，支持多线程非阻塞显示
+    """SSD1306 OLED 屏幕驱动类（简化版，修复字体问题）
+    
+    使用示例：
+        # 方式1：使用with语句（推荐）
+        with OLED_Driver() as oled:
+            oled.text("Hello, World!")
+            time.sleep(2)
+            oled.clear()
+        
+        # 方式2：手动管理
+        oled = OLED_Driver()
+        oled.text("Hello!")
+        oled.stop()
     """
     
-    def __init__(self, port=1, address=0x3C, width=128, height=64, font_path="/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"):
-        """
-        初始化OLED显示器
+    def __init__(self, port=1, address=0x3C, width=128, height=64):
+        """初始化 OLED 屏幕
         
-        Args:
-            port (int): IIC总线端口号，树莓派上0表示第一个IIC总线，1表示第二个IIC总线
-            address (hex): IIC设备地址，默认0x3C
-            width (int): 屏幕宽度，默认128像素
-            height (int): 屏幕高度，默认64像素
-            font_path (str): 字体文件路径
+        参数:
+            port: I2C 总线端口（默认 1）
+            address: I2C 地址（默认 0x3C）
+            width: 屏幕宽度（默认 128）
+            height: 屏幕高度（默认 64）
         """
         self.port = port
         self.address = address
         self.width = width
         self.height = height
-        self.font_path = font_path
-        
-        # 初始化IIC和OLED设备
-        self.serial = i2c(port=self.port, address=self.address)
-        self.device = ssd1306(self.serial, width=self.width, height=self.height)
+        self.device = None
+        self.font_cache = {}
         
         # 线程相关
-        self.display_thread = None
+        self.display_queue = queue.Queue(maxsize=5)
+        self.stop_event = threading.Event()
+        self.thread = None
         self.is_running = False
-        self.current_text = ""
-        self.current_fontsize = 12
-        self.current_duration = 2
         
-        # 线程锁，用于保护共享资源
-        self.lock = threading.Lock()
+        # 初始化设备
+        self._init_device()
+        
+        # 启动后台线程
+        self._start_thread()
     
-    def _draw_text(self, text, fontsize):
-        """
-        在OLED屏幕上绘制文本（内部方法）
-        
-        Args:
-            text (str): 要显示的文本
-            fontsize (int): 字体大小
-        """
+    def _init_device(self):
+        """内部方法：初始化设备"""
         try:
-            font = ImageFont.truetype(self.font_path, fontsize)
-            
-            with canvas(self.device) as draw:
-                # 绘制黑色背景和白色边框
-                draw.rectangle(self.device.bounding_box, outline="white", fill="black")
-                
-                # 计算文本宽度和高度
-                w = font.getlength(text)
-                ascent, descent = font.getmetrics()
-                h = ascent - descent
-                
-                # 计算居中坐标
-                x = (self.width - w) / 2
-                y = (self.height - h) / 2
-                
-                # 绘制文本
-                draw.text((x, y), text, font=font, fill="white")
+            self.serial = i2c(port=self.port, address=self.address)
+            self.device = ssd1306(self.serial, width=self.width, height=self.height)
+            print(f"[OLED] 初始化成功 - {self.width}x{self.height}")
         except Exception as e:
-            print(f"绘制文本出错: {e}")
+            raise RuntimeError(f"OLED 初始化失败: {e}")
     
-    def _display_worker(self):
-        """
-        线程工作函数，持续显示内容
-        """
-        while self.is_running:
-            with self.lock:
-                text = self.current_text
-                fontsize = self.current_fontsize
-                duration = self.current_duration
-            
-            if text:
-                # 显示文本
-                self._draw_text(text, fontsize)
-                print(f"屏幕正在显示: {text}")
+    def _get_font(self, size):
+        """内部方法：获取字体对象（带缓存）"""
+        if size not in self.font_cache:
+            # 使用默认字体，不依赖特定路径
+            from PIL import ImageFont
+            self.font_cache[size] = ImageFont.load_default()
+        return self.font_cache[size]
+    
+    def _display_thread(self):
+        """后台显示线程"""
+        print("[OLED] 后台显示线程已启动")
+        
+        while not self.stop_event.is_set():
+            try:
+                # 从队列获取任务
+                try:
+                    task = self.display_queue.get(timeout=0.1)
+                except queue.Empty:
+                    continue
                 
-                # 显示持续时间
-                time.sleep(duration)
-            else:
-                # 如果没有内容，短暂休眠避免CPU占用
+                # 执行任务
+                task_type = task['type']
+                
+                if task_type == 'text':
+                    self._do_text(task)
+                elif task_type == 'clear':
+                    self._do_clear()
+                
+                # 标记任务完成
+                self.display_queue.task_done()
+                
+            except Exception as e:
+                print(f"[OLED] 显示错误: {e}")
                 time.sleep(0.1)
+        
+        print("[OLED] 后台显示线程已停止")
     
-    def start(self):
-        """
-        启动显示线程
+    def _do_text(self, task):
+        """内部方法：执行文本显示"""
+        if not self.device:
+            return
+        
+        content = task['content']
+        size = task['size']
+        center = task['center']
+        
+        font = self._get_font(size)
+        
+        with canvas(self.device) as draw:
+            draw.rectangle(self.device.bounding_box, outline="white", fill="black")
+            
+            lines = content.split('\\n')
+            line_heights = []
+            
+            for line in lines:
+                ascent, descent = font.getmetrics()
+                line_heights.append(ascent - descent + 2)
+            
+            if center:
+                total_height = sum(line_heights)
+                start_y = (self.height - total_height) // 2
+            else:
+                start_y = 1
+            
+            current_y = start_y
+            
+            for i, line in enumerate(lines):
+                if not line.strip():
+                    current_y += line_heights[i]
+                    continue
+                
+                w = font.getlength(line)
+                
+                if center:
+                    x = (self.width - w) // 2
+                else:
+                    x = 10
+                
+                y = current_y
+                draw.text((x, y), line, font=font, fill="white")
+                current_y += line_heights[i]
+    
+    def _do_clear(self):
+        """内部方法：执行清屏"""
+        if not self.device:
+            return
+        
+        with canvas(self.device) as draw:
+            draw.rectangle(self.device.bounding_box, outline="black", fill="black")
+    
+    def _start_thread(self):
+        """内部方法：启动后台线程"""
+        self.stop_event.clear()
+        self.thread = threading.Thread(target=self._display_thread, daemon=True)
+        self.thread.start()
+        self.is_running = True
+    
+    def text(self, content, size=12, center=True):
+        """在屏幕上显示文本（不阻塞主线程）
+        
+        参数:
+            content: 要显示的文本（支持换行 \\n）
+            size: 字体大小（默认 12）
+            center: 是否居中显示（默认 True）
         """
         if not self.is_running:
-            self.is_running = True
-            self.display_thread = threading.Thread(target=self._display_worker, daemon=True)
-            self.display_thread.start()
-            print("OLED显示线程已启动")
-    
-    def stop(self):
-        """
-        停止显示线程
-        """
-        self.is_running = False
-        if self.display_thread is not None and self.display_thread.is_alive():
-            self.display_thread.join(timeout=2)
-            print("OLED显示线程已停止")
-    
-    def display_text(self, text, fontsize=12, duration=2):
-        """
-        显示文本（非阻塞）
+            return
         
-        Args:
-            text (str): 要显示的文本
-            fontsize (int): 字体大小，默认12
-            duration (float): 显示时长（秒），默认2秒
-        """
-        if not self.is_running:
-            self.start()
-        
-        with self.lock:
-            self.current_text = text
-            self.current_fontsize = fontsize
-            self.current_duration = duration
+        # 把显示任务放入队列，立即返回
+        try:
+            self.display_queue.put({
+                'type': 'text',
+                'content': content,
+                'size': size,
+                'center': center
+            }, block=False)
+        except queue.Full:
+            pass
     
     def clear(self):
-        """
-        清空屏幕
-        """
+        """清屏（不阻塞主线程）"""
+        if not self.is_running:
+            return
+        
         try:
-            with canvas(self.device) as draw:
-                draw.rectangle(self.device.bounding_box, outline="white", fill="black")
-            print("屏幕已清空")
-        except Exception as e:
-            print(f"清空屏幕出错: {e}")
+            self.display_queue.put({'type': 'clear'}, block=False)
+        except queue.Full:
+            pass
+    
+    def stop(self):
+        """停止后台线程并释放资源"""
+        if not self.is_running:
+            return
+        
+        print("[OLED] 正在停止后台线程...")
+        
+        # 设置停止事件
+        self.stop_event.set()
+        
+        # 等待线程结束
+        if self.thread is not None:
+            self.thread.join(timeout=2.0)
+        
+        # 清屏
+        self._do_clear()
+        
+        # 关闭设备
+        if self.device is not None:
+            try:
+                self.device.cleanup()
+                print("[OLED] 设备已关闭")
+            except Exception as e:
+                print(f"[OLED] 关闭设备时出错: {e}")
+            finally:
+                self.device = None
+                self.serial = None
+        
+        self.is_running = False
+    
+    def cleanup(self):
+        """释放所有资源（同 stop）"""
+        self.stop()
     
     def __enter__(self):
-        """
-        上下文管理器入口
-        """
-        self.start()
+        """上下文管理器入口"""
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        上下文管理器出口
-        """
-        self.stop()
-        self.clear()
-        
-        
-    def cleanup(self):
-        """
-        清理资源
-        """
-        self.stop()
-        self.clear()
-        print("OLED驱动已清理")
-
-
-if __name__ == '__main__':
-    # 使用方式1：直接调用
-    display = OLED_Driver()
-    display.start()
+        """上下文管理器出口"""
+        self.cleanup()
+        return False
     
-    # 主程序可以继续执行其他操作，不会被阻塞
-    for i in range(5):
-        display.display_text(f"禄也，您好 {i}", fontsize=12, duration=2)
-        print(f"主程序继续执行... {i}")
+    def __del__(self):
+        """析构函数，确保资源释放"""
+        self.cleanup()
+
+
+# --- 测试代码 ---
+if __name__ == "__main__":
+    print("=" * 50)
+    print("OLED 简化版驱动测试（修复字体问题）")
+    print("=" * 50)
+    
+    with OLED_Driver() as oled:
+        print("\n[测试1] 显示单行文本（不阻塞）")
+        oled.text("禄也，您好")
+        print("  显示：禄也，您好")
+        time.sleep(2)
+        
+        print("\n[测试2] 显示多行文本（不阻塞）")
+        oled.text("多行文本\\n第2行\\n第3行", size=10)
+        print("  显示：多行文本")
+        time.sleep(2)
+        
+        print("\n[测试3] 不居中显示（不阻塞）")
+        oled.text("不居中显示", center=False)
+        print("  显示：不居中")
+        time.sleep(2)
+        
+        print("\n[测试4] 清屏（不阻塞）")
+        oled.clear()
+        print("  清屏")
         time.sleep(1)
+        
+        print("\n[测试5] 快速连续显示（不阻塞）")
+        for i in range(5):
+            oled.text(f"快速显示 {i+1}")
+            print(f"  已提交显示任务 {i+1}")
+            time.sleep(0.5)
     
-    display.stop()
-    
-    # 使用方式2：上下文管理器（推荐）
-    # with OLEDDisplay() as display:
-    #     for i in range(5):
-    #         display.display_text(f"禄也，您好 {i}", fontsize=12, duration=2)
-    #         print(f"主程序继续执行... {i}")
-    #         time.sleep(1)
+    print("\n测试完成！")

@@ -55,7 +55,21 @@ class YOLODetector:
         self.smart_now_target_center_x = self.get_target_center_x()
         self.smart_now_target_center_y = self.get_target_center_y()
         # 切换标志位,
-        yolo_detect_turn = not yolo_detect_turn
+        self.yolo_detect_turn = not self.yolo_detect_turn
+    
+    def get_smart_control_params(self):
+        """获取SMART CONTROL 参数"""
+        return self.smart_last_target_center_x, self.smart_last_target_center_y, self.smart_now_target_center_x, self.smart_now_target_center_y
+    
+    def calculate_smart_control_target_center(self):
+        """计算智能超前预估控制的目标中心坐标"""
+        
+        dx = self.smart_now_target_center_x - self.smart_last_target_center_x
+        dy = self.smart_now_target_center_y - self.smart_last_target_center_y
+        smart_predicted_target_center_x = self.smart_now_target_center_x + dx
+        smart_predicted_target_center_y = self.smart_now_target_center_y + dy
+        
+        return smart_predicted_target_center_x, smart_predicted_target_center_y
         
         
     def get_yolo_detect_turn(self):
@@ -163,33 +177,33 @@ class YOLODetector:
             print(f"Average Inference Time: {avg_inference:.2f}ms")
             print("="*40)
     
-    # def __enter__(self):
-    #     """上下文管理器入口
+    def __enter__(self):
+        """上下文管理器入口
         
-    #     使用示例：
-    #         with YOLODetector(MODEL_PATH) as detector:
-    #             detector.start()
-    #             # 使用检测器...
-    #     """
-    #     return self
+        使用示例：
+            with YOLODetector(MODEL_PATH) as detector:
+                detector.start()
+                # 使用检测器...
+        """
+        return self
     
-    # def __exit__(self, exc_type, exc_val, exc_tb):
-    #     """上下文管理器出口
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """上下文管理器出口
         
-    #     自动调用 cleanup() 释放资源
-    #     """
-    #     self.cleanup()
-    #     return False
+        自动调用 cleanup() 释放资源
+        """
+        self.cleanup()
+        return False
     
-    # def __del__(self):
-    #     """析构函数，确保资源释放
+    def __del__(self):
+        """析构函数，确保资源释放
         
-    #     防止忘记调用 cleanup() 导致资源泄漏
-    #     """
-    #     try:
-    #         self.cleanup()
-    #     except Exception:
-    #         pass
+        防止忘记调用 cleanup() 导致资源泄漏
+        """
+        try:
+            self.cleanup()
+        except Exception:
+            pass
 
 
 # --- 单元测试 ---
