@@ -31,5 +31,5 @@ class SystemManager:
 # # 使用时
 # with SystemManager() as sys:
 #     while True:
-#         results = sys.model.detect(sys.camera.read())
+#         results = sys.detector.model.detect(sys.camera.read())
 #         sys.oled.draw_text(...)
