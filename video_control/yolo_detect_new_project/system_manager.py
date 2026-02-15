@@ -2,7 +2,7 @@ from yolo_predict import YOLODetector
 from buzzer_driver import BuzzerController
 from vl53l0x_drive_threat import VL53L0X_Threaded
 from oled_driver import OLED_Driver
-
+from pwm_servos_control import ServoController
 
 class SystemManager:
     def __init__(self):
@@ -11,6 +11,7 @@ class SystemManager:
         self.oled = OLED_Driver()
         self.laser_sensor = VL53L0X_Threaded()
         self.detector = YOLODetector(MODEL_PATH)
+        self.servo_controller = ServoController()
         
     def __enter__(self):
         # 统一进入，如果有初始化顺序要求，可以在这里控制
@@ -26,6 +27,7 @@ class SystemManager:
         self.oled.cleanup()
         self.laser_sensor.cleanup()
         self.detector.cleanup()
+        self.servo_controller.cleanup()
         print("[System] 所有资源已安全释放")
 
 # # 使用时

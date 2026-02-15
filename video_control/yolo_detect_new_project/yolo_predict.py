@@ -44,6 +44,13 @@ class YOLODetector:
         """获取目标中心坐标"""
         return self.target_center_x, self.target_center_y
     
+    def get_target_center_x(self):
+        """获取目标中心坐标"""
+        return self.target_center_x
+    
+    def get_target_center_y(self):
+        """获取目标中心坐标"""
+        return  self.target_center_y    
     def start(self):
         """启动相机"""
         self.picam2.start()

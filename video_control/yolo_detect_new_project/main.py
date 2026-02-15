@@ -45,18 +45,7 @@ def cv_show(frame, results,sys):
     return False
 
 if __name__ == "__main__":
-    #模型路径
-    # MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
-    
-    # detector = YOLODetector(MODEL_PATH)  #创建YOLODetector对象实例
-    # detector.start()  #启动树莓派相机
-    
-    # # 创建蜂鸣器控制器实例
-    # buzzer = BuzzerController()
-    
-    # # 创建VL53L0X_Threaded实例
-    # laser_sensor = VL53L0X_Threaded()
-    # laser_sensor.start()  # 启动测距线程
+
     with SystemManager() as sys:
         
        
@@ -65,10 +54,13 @@ if __name__ == "__main__":
             result, annotated_frame = sys.detector.detect_frame()
             
             #调用CV显示逻辑
-            cv_show(annotated_frame, result,sys)
+            # cv_show(annotated_frame, result,sys)
             
             
             if sys.detector.get_target_detected():
+                
+                #调用舵机控制器跟踪目标
+                sys.servo_controller.track_target( sys.detector.get_target_center_x(), sys.detector.get_target_center_y(), sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
                 
                 print("目标检测到")
                 # 启动蜂鸣器报警
