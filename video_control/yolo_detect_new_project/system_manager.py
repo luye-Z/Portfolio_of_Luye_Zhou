@@ -31,7 +31,7 @@ class SystemManager:
             double_cb=self.action_double_click
             )
         #这些模式中，第一个也就是索引号是0是菜单模式，剩下的是运行模式
-        self.program_mode_storage = ("program_menu","yolo_detection_vc_show","yolo_detection_no_image")  # 初始化为检测模式
+        self.program_mode_storage = ("program menu","yolo detection\nvc show","yolo detection\nno image")  # 初始化为检测模式
         self.menu_select_idx = 1  #代表着当前菜单是第一页，也就是OLED显示yolo_detection_vc_show
                                     #一个比较巧妙的设计是，这里的menu_select_idx = 1 和program_mode_storage[1] 是对应的
         self.current_program_mode = self.program_mode_storage[0]                     
@@ -79,7 +79,7 @@ class SystemManager:
             # 构建显示文本：第一行是标题，第二行是带光标的选项
             # \n 代表换行
             display_text = f"--- MENU ---\n> {selected_name}"
-            
+            # selected_name = selected_name.replace("@", "\n")
             self.oled.show_text(display_text, size=12)
             
         # 2. 如果处于“YOLO 显示模式”
