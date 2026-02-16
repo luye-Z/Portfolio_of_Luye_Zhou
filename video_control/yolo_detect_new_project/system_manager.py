@@ -30,8 +30,11 @@ class SystemManager:
             long_cb=self.action_long_press,
             double_cb=self.action_double_click
             )
-        self.program_mode = ("program_menu","yolo_detection_vc_show","yolo_detection_no_image")  # 初始化为检测模式
-                             
+        #这些模式中，第一个也就是索引号是0是菜单模式，剩下的是运行模式
+        self.program_mode_storage = ("program_menu","yolo_detection_vc_show","yolo_detection_no_image")  # 初始化为检测模式
+        self.menu_select_idx = 1  #代表着当前菜单是第一页，也就是OLED显示yolo_detection_vc_show
+                                    #一个比较巧妙的设计是，这里的menu_select_idx = 1 和program_mode_storage[1] 是对应的
+        self.current_program_mode = self.program_mode_storage[0]                     
 
         # self.mpu6050 = MPU6050driver()
         #mpu6050比较特殊，他需要一点时间去校准传感器
@@ -65,15 +68,41 @@ class SystemManager:
         # self.mpu6050.cleanup()
         print("[System] 所有资源已安全释放")
         
-    def program_mode_manager(self):
-        """程序模式切换逻辑"""
-        pass 
+    def program_mode_manager_oled_show(self):
+        """根据当前状态刷新 OLED 屏幕显示内容"""
+        
+        # 1. 如果处于“菜单模式”
+        if self.current_program_mode == self.program_mode_storage[0]:
+            # 获取当前选中的模式名称
+            selected_name = self.program_mode_storage[self.menu_select_idx]
+            
+            # 构建显示文本：第一行是标题，第二行是带光标的选项
+            # \n 代表换行
+            display_text = f"--- MENU ---\n> {selected_name}"
+            
+            self.oled.show_text(display_text, size=12)
+            
+        # 2. 如果处于“YOLO 显示模式”
+        elif self.current_program_mode == self.program_mode_storage[1]:
+            self.oled.show_text("RUNNING:\nDetection + CV", size=12)
+            
+        # 3. 如果处于“YOLO 静默模式”
+        elif self.current_program_mode == self.program_mode_storage[2]:
+            self.oled.show_text("RUNNING:\nHeadless Mode", size=12)
+
 
         #=====================按键相关函数==============================
     def action_short_press(self):
         print("【短按】")
-        if self.get_program_mode() == "program_menu"  : 
-            self.oled.show_text("选择模式\\nyolo_detection_vc_show", size=12)
+        if self.get_program_mode() == self.program_mode_storage[0] :
+            #如果当前模式是菜单模式 
+            self.menu_select_idx +=1  # 菜单索引增加1，代表着选择了下一个模式
+            if self.menu_select_idx >= len(self.program_mode_storage): # 标签索引越界
+                self.menu_select_idx = 1  # 重置索引，回到第一个模式
+                
+            self.program_mode_manager_oled_show() # 刷新 OLED 显示
+                
+            # self.oled.show_text("选择模式\\nyolo_detection_vc_show", size=12)
         #执行，如果当前程序模式是program_menu，在OLED屏幕上显示“选择模式yolo_detection_vc_show”
         #再短按一次，在OLED屏幕上显示“选择模式yolo_detection_no_image”，
         #再短按一次，在OLED屏幕上显示“选择模式yolo_detection_vc_show”
@@ -82,27 +111,54 @@ class SystemManager:
         
     def action_long_press(self):
         print("【长按】->进入系统设置")
+        if self.get_program_mode() != self.program_mode_storage[0] :#当前模式不是菜单模式，是运行模式之一
+            self.program_mode_set(0) #切换到菜单模式
+            self.menu_select_idx = 1 # 重置菜单光标到第一个
+            
+            self.program_mode_manager_oled_show() # 刷新 OLED 显示
+            #在OLED屏幕上显示“选择模式yolo_detection_vc_show”
         #如果当前模式是两个运行模式之一，则跳转到菜单模式
         
     def action_double_click(self):
         print("【双击】->")
+        if self.get_program_mode() == self.program_mode_storage[0] :#当前模式是菜单模式
+            self.program_mode_set(self.menu_select_idx) #切换到OLED屏幕上显示的模式
+            
+            # 刷新屏幕显示“运行中”的状态
+            self.program_mode_manager_oled_show()
         #如果当前模式是菜单模式 ，双击则进入OLED屏幕上显示的模式
 #===================================================
 
     def get_program_mode(self):
         """获取当前程序模式"""
-        return self.program_mode
-
+        return self.current_program_mode
+    
+    
+    def program_mode_set(self,mode_index):
+        """设置当前程序模式,mode_index为模式索引,0为菜单模式,1为显示模式,2为无图像模式"""
+ 
+        
+        #这行代码作为参考self.program_mode_storage = ("program_menu","yolo_detection_vc_show","yolo_detection_no_image")  # 初始化为检测模式
+        self.current_program_mode = self.program_mode_storage[mode_index]
 
 if __name__ == "__main__":
     # 启动线程读取数据
     with SystemManager() as sys:
         
+        
+        sys.program_mode_manager_oled_show()
+            
+        # 主程序继续执行其他任务
+        while True:
+            
+            
+            print(f"当前模式: {sys.get_program_mode()}")
+            time.sleep(2)  # 示例的主程序工作
     
     # 主程序继续执行其他任务
-        while True:
-        # 主程序可以执行其他任务
+        # while True:
+        # # 主程序可以执行其他任务
            
-            print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
+        #     print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
            
-            time.sleep(0.1)  # 示例的主程序工作
+        #     time.sleep(0.1)  # 示例的主程序工作
