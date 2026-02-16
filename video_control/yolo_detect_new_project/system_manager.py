@@ -2,7 +2,7 @@ import cv2
 from yolo_predict import YOLODetector
 from buzzer_driver import BuzzerController
 from vl53l0x_drive_threat import VL53L0X_Threaded
-from oled_driver import OLED_Driver
+from oled_driver import OLEDDriver
 from pwm_servos_control import ServoController
 from rgb_led_control import LEDController
 from mpu6050_driver import MPU6050driver
@@ -15,7 +15,7 @@ class SystemManager:
     def __init__(self):
         MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
         self.buzzer = BuzzerController()
-        self.oled = OLED_Driver()
+        self.oled = OLEDDriver()
         self.laser_sensor = VL53L0X_Threaded()
         self.detector = YOLODetector(MODEL_PATH)
         self.servo_controller = ServoController()

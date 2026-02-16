@@ -60,10 +60,10 @@ if __name__ == "__main__":
         while True:
             # 3. 检查是否需要切换到智能控制模式
             
-            #测试代码
-            print(sys.detector.get_yolo_detect_turn())
-            print(sys.detector.get_yolo_detect_turn())
-            print(sys.detector.get_yolo_detect_turn())
+            # #测试代码
+            # print(sys.detector.get_yolo_detect_turn())
+            # print(sys.detector.get_yolo_detect_turn())
+            # print(sys.detector.get_yolo_detect_turn())
             
             
             if not sys.detector.get_yolo_detect_turn():
@@ -97,14 +97,16 @@ if __name__ == "__main__":
                 # 调用 YOLO 检测（只调用一次！）
                 result, annotated_frame = sys.detector.detect_frame()
                 
+                # 更新智能控制参数
                 sys.detector.update_smart_control_params()
+                #翻转模式选择标志位
                 sys.detector.reverse_yolo_detect_turn()
                 
                 # 更新智能控制参数
-                
+                print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
             # 4. 检查是否检测到目标
                 if sys.detector.get_target_detected():
-                    sys.oled.text(f"objection detected !", size=12)
+                    sys.oled.show_text(f"objection detected !", size=12)
                     sys.rgb_led.set_color_name("red")
                     
                     # 调用舵机控制器跟踪目标

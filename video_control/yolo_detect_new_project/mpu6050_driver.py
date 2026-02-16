@@ -14,7 +14,7 @@ class MPU6050driver:
         self.last_time = None
         self.lock = threading.Lock()  # 用于同步数据访问
         
-        #控制线程多长时间读取一下MPU6050的数据
+        #控制线程多长时间读取一下MPU6050的数据，单位S
         self.DATA_READ_TIME_STEP = 5
         
     def calibrate(self, samples=200):
