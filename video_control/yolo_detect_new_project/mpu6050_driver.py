@@ -13,8 +13,10 @@ class MPU6050driver:
         self.roll = 0.0
         self.last_time = None
         self.lock = threading.Lock()  # 用于同步数据访问
+        
         #控制线程多长时间读取一下MPU6050的数据
         self.DATA_READ_TIME_STEP = 5
+        
     def calibrate(self, samples=200):
         """精准校准，计算传感器静止时的偏置"""
         print(f"正在校准 MPU6050 ({samples} 次采样)，请保持传感器静止...")
@@ -71,12 +73,23 @@ class MPU6050driver:
         def read_data():
             while True:
                 with self.lock:
-                    pitch, roll = self.get_pose()
-                    print(f"Pitch: {pitch:.2f}°, Roll: {roll:.2f}°")
+                    self.pitch, self.roll = self.get_pose()
+                    # print(f"Pitch: {pitch:.2f}°, Roll: {roll:.2f}°")
                 time.sleep(self.DATA_READ_TIME_STEP)  # 控制数据读取频率
 
         # 启动数据读取线程
         threading.Thread(target=read_data, daemon=True).start()
+        
+    def get_mpu6050_angle_pose(self):
+        return self.pitch, self.roll
+        
+    def cleanup(self):
+        """释放资源：停止线程，清理状态"""
+        print("\n正在关闭 MPU6050 资源...")
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1.0) # 等待线程结束
+        print("MPU6050 线程已安全停止，I2C 总线已释放。")
 
 if __name__ == "__main__":
     mpu = MPU6050driver()
@@ -86,5 +99,7 @@ if __name__ == "__main__":
     # 主程序继续执行其他任务
     while True:
         # 主程序可以执行其他任务
-        print("主程序在运行...")
+        
         time.sleep(1)  # 示例的主程序工作
+        
+       
