@@ -15,27 +15,27 @@ class SystemManager:
     def __init__(self):
         MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
         self.buzzer = BuzzerController()
-        self.oled = OLEDDriver()
+        # self.oled = OLEDDriver()
         self.laser_sensor = VL53L0X_Threaded()
         self.detector = YOLODetector(MODEL_PATH)
         self.servo_controller = ServoController()
         self.rgb_led = LEDController(brightness=0.01)
-        self.mpu6050 = MPU6050driver()
+        # self.mpu6050 = MPU6050driver()
         #mpu6050比较特殊，他需要一点时间去校准传感器
-        self.mpu6050.calibrate()
+        # self.mpu6050.calibrate()
     def __enter__(self):
         # 统一进入，如果有初始化顺序要求，可以在这里控制
         # 入口程序
         self.detector.start()  #启动树莓派相机
         self.laser_sensor.start()  # 启动测距线程
-        self.mpu6050.start_reading()  # 启动线程读取数据
+        # self.mpu6050.start_reading()  # 启动线程读取数据
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         # 统一出口，按顺序关闭设备
         
         # 在 OLED 屏幕上显示退出信息
-        self.oled.text("SYSTEM\\nSHUTTING DOWN...\\nBYE!")
+        # self.oled.text("SYSTEM\\nSHUTTING DOWN...\\nBYE!")
         
         # 短暂延迟，确保 OLED 显示完成
         import time
@@ -43,12 +43,12 @@ class SystemManager:
         
         # 清理资源
         self.buzzer.cleanup()
-        self.oled.cleanup()
+        # self.oled.cleanup()
         self.laser_sensor.cleanup()
         self.detector.cleanup()
         self.servo_controller.cleanup()
         self.rgb_led.cleanup()
-        
+        # self.mpu6050.cleanup()
         print("[System] 所有资源已安全释放")
 
 

@@ -103,10 +103,10 @@ if __name__ == "__main__":
                 sys.detector.reverse_yolo_detect_turn()
                 
                 # 更新智能控制参数
-                print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
+                # print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
             # 4. 检查是否检测到目标
                 if sys.detector.get_target_detected():
-                    sys.oled.show_text(f"objection detected !", size=12)
+                    # sys.oled.show_text(f"objection detected !", size=12)
                     sys.rgb_led.set_color_name("red")
                     
                     # 调用舵机控制器跟踪目标
@@ -129,9 +129,9 @@ if __name__ == "__main__":
                     # 停止蜂鸣器报警
                     sys.buzzer.stop_alarm()
                     sys.rgb_led.set_color_name("green")
-                    sys.oled.clear()
+                    # sys.oled.clear()
                 
-            # 5. 调用 CV 屏幕显示逻辑
+            #5. 调用 CV 屏幕显示逻辑
             quit_flag = cv_show(annotated_frame, result, sys)
             
             # 6. 如果返回 True（按下了 Q），则跳出循环
