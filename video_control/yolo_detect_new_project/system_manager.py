@@ -17,12 +17,22 @@ class SystemManager:
     def __init__(self):
         MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
         self.buzzer = BuzzerController()
-        # self.oled = OLEDDriver()
+        self.oled = OLEDDriver()
         self.laser_sensor = VL53L0X_Threaded()
         self.detector = YOLODetector(MODEL_PATH)
         self.servo_controller = ServoController()
         self.rgb_led = LEDController(brightness=0.01)
-        self.button_driver = ButtonDriver()
+        
+        # 初始化按键驱动,并且直接注册了三个按键触发函数
+        self.button_driver = ButtonDriver(
+            pin=23,
+            short_cb=self.action_short_press,
+            long_cb=self.action_long_press,
+            double_cb=self.action_double_click
+            )
+        self.program_mode = ("program_menu","yolo_detection_vc_show","yolo_detection_no_image")  # 初始化为检测模式
+                             
+
         # self.mpu6050 = MPU6050driver()
         #mpu6050比较特殊，他需要一点时间去校准传感器
         # self.mpu6050.calibrate()
@@ -54,6 +64,34 @@ class SystemManager:
         self.button_driver.cleanup()
         # self.mpu6050.cleanup()
         print("[System] 所有资源已安全释放")
+        
+    def program_mode_manager(self):
+        """程序模式切换逻辑"""
+        pass 
+
+        #=====================按键相关函数==============================
+    def action_short_press(self):
+        print("【短按】")
+        if self.get_program_mode() == "program_menu"  : 
+            self.oled.show_text("选择模式\\nyolo_detection_vc_show", size=12)
+        #执行，如果当前程序模式是program_menu，在OLED屏幕上显示“选择模式yolo_detection_vc_show”
+        #再短按一次，在OLED屏幕上显示“选择模式yolo_detection_no_image”，
+        #再短按一次，在OLED屏幕上显示“选择模式yolo_detection_vc_show”
+        #如此循环
+        
+        
+    def action_long_press(self):
+        print("【长按】->进入系统设置")
+        #如果当前模式是两个运行模式之一，则跳转到菜单模式
+        
+    def action_double_click(self):
+        print("【双击】->")
+        #如果当前模式是菜单模式 ，双击则进入OLED屏幕上显示的模式
+#===================================================
+
+    def get_program_mode(self):
+        """获取当前程序模式"""
+        return self.program_mode
 
 
 if __name__ == "__main__":

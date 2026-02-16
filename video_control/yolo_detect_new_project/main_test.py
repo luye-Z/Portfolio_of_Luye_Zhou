@@ -2,7 +2,7 @@ import cv2
 from yolo_predict import YOLODetector
 from system_manager import SystemManager
 
-#这篇MAIN TEST的主要作用是测试KEY 搭配OLED屏幕，对系统菜单和功能切换进行开发测试
+
 def cv_show(frame, results, sys):
     """
     极简显示函数：只画框和原始视频
@@ -49,33 +49,11 @@ def cv_show(frame, results, sys):
     return False
 
 
-#=====================按键相关函数==============================
-def action_short_press():
-    print("【短按】-> 执行：切换灯光状态")
-    
-def action_long_press():
-    print("【长按】-> 执行：进入系统设置")
-    
-def action_double_click():
-    print("【双击】-> 执行：播放/暂停音乐")
-#===================================================
-
-
 if __name__ == "__main__":
     # 1. 初始化系统管理器，和start方法
     with SystemManager() as sys:
         # 2. 只在循环外调用一次 detect_frame，避免重复调用
         result, annotated_frame = sys.detector.detect_frame()
-        
-        button_controller = sys.ButtonDriver(            
-            pin=23,
-            short_cb=action_short_press,
-            long_cb=action_long_press,
-            double_cb=action_double_click
-
-        )
-        
-        
         
 
         
