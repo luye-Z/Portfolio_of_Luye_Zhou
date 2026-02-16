@@ -6,6 +6,8 @@ from oled_driver import OLEDDriver
 from pwm_servos_control import ServoController
 from rgb_led_control import LEDController
 from mpu6050_driver import MPU6050driver
+from button_driver import ButtonDriver
+
 import time
 
 
@@ -20,6 +22,7 @@ class SystemManager:
         self.detector = YOLODetector(MODEL_PATH)
         self.servo_controller = ServoController()
         self.rgb_led = LEDController(brightness=0.01)
+        self.button_driver = ButtonDriver()
         # self.mpu6050 = MPU6050driver()
         #mpu6050比较特殊，他需要一点时间去校准传感器
         # self.mpu6050.calibrate()
@@ -48,6 +51,7 @@ class SystemManager:
         self.detector.cleanup()
         self.servo_controller.cleanup()
         self.rgb_led.cleanup()
+        self.button_driver.cleanup()
         # self.mpu6050.cleanup()
         print("[System] 所有资源已安全释放")
 

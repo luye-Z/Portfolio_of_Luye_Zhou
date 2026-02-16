@@ -2,6 +2,7 @@ from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import ssd1306
 from PIL import ImageFont
+import time
 
 class OLEDDriver:
     def __init__(self, port=1, address=0x3C, width=128, height=64):
@@ -32,7 +33,8 @@ if __name__ == "__main__":
     
     oled = OLEDDriver()
     try:
+        oled.show_text("Hello, OLED!\n你好，OLED！", size=20)
         while True:
-            oled.show_text("Hello, OLED!\n你好，OLED！", size=12)
+            time.sleep(1)
     except KeyboardInterrupt:
         oled.cleanup()
