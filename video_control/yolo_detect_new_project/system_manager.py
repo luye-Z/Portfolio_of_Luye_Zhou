@@ -36,7 +36,7 @@ class SystemManager:
         # 这些模式中，第一个也就是索引号是0是菜单模式，剩下的是运行模式
         self.program_mode_storage = ("program menu","yolo detection\nvc show","yolo detection\nno image")
         self.menu_select_idx = 1
-        self.current_program_mode = self.program_mode_storage[1]
+        self.current_program_mode = self.program_mode_storage[0]
         
         # ============ OLED 性能优化部分 ============
         # OLED ��新队列，用于线程间通信
