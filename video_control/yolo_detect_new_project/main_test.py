@@ -50,100 +50,95 @@ def cv_show(frame, results, sys):
     return False
 
 
+def program_mode_yolodetection_no_show(sys):
+    """
+    YOLO检测模式（不显示图像）
+    修复版本：移除错误的if条件，直接执行逻辑
+    """
+    annotated_frame = None
+    result = None
+    
+    if sys.detector.get_target_detected():
+        # 智能控制模式：不调用 detect_frame，直接使用预估坐标
+        print("智能控制模式")
+        smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
+        
+        # 调用舵机控制器跟踪目标
+        sys.servo_controller.track_target(
+            smart_predicted_target_center_xy_tuple[0], 
+            smart_predicted_target_center_xy_tuple[1], 
+            sys.detector.SCREEN_WIDTH, 
+            sys.detector.SCREEN_HEIGHT
+        )
+    else:
+        print("YOLO 检测模式")
+        # YOLO 检测模式：调用 detect_frame
+        result, annotated_frame = sys.detector.detect_frame()
+        
+        # 更新智能控制参数
+        sys.detector.update_smart_control_params()
+        
+        # 4. 检查是否检测到目标
+        if sys.detector.get_target_detected():
+            sys.rgb_led.set_color_name("red")
+            
+            # 调用舵机控制器跟踪目标
+            obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+            sys.servo_controller.track_target(
+                obj_target_center_x, 
+                obj_target_center_y, 
+                sys.detector.SCREEN_WIDTH, 
+                sys.detector.SCREEN_HEIGHT
+            )
+            
+            # 启动蜂鸣器报警
+            sys.buzzer.start_alarm()
+            current_d = sys.laser_sensor.distance
+            print(f"激光测距距离: {current_d} mm")
+            obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+            print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+        else:
+            print("未检测到目标")
+            # 停止蜂鸣器报警
+            sys.buzzer.stop_alarm()
+            sys.rgb_led.set_color_name("green")
+    
+    return annotated_frame, result
+
+
+def program_mode_yolodetection_show(sys):
+    """
+    YOLO检测模式（显示图像）
+    """
+    annotated_frame, result = program_mode_yolodetection_no_show(sys)
+    
+    # 添加空值检查，防止None被传入cv_show
+    if annotated_frame is not None and result is not None:
+        quit_flag = cv_show(annotated_frame, result, sys)
+        return quit_flag
+    
+    return False
+
+
 def running_code(sys):
     """
     主运行函数：处理视频流、YOLO检测、舵机控制
     :param sys: 系统管理器实例
     """ 
-    current_program_mode = sys.get_program_mode() #把当前程序运行模式赋值给current_program_mode    
+    sys.program_mode_manager_oled_show()
+    current_program_mode = sys.get_program_mode()  # 把当前程序运行模式赋值给current_program_mode 
     
+    if current_program_mode == "yolo detection\nno image":
+        program_mode_yolodetection_no_show(sys)
+    elif current_program_mode == "yolo detection\nvc show":
+        program_mode_yolodetection_show(sys)
+        
 
 if __name__ == "__main__":
-    # 1. 初始化系统管理器，和start方法
+    # 1. 初始化系统管理器
     with SystemManager() as sys:
-        # 2. 只在循环外调用一次 detect_frame，避免重复调用
-        result, annotated_frame = sys.detector.detect_frame()
-        
-
+        # ✅ 删除了循环前的 detect_frame() 调用
+        # 这样可以避免改变初始状态标志位
         
         while True:
-            # 3. 检查是否需要切换到智能控制模式
-            
-            # #测试代码
-            # print(sys.detector.get_yolo_detect_turn())
-            # print(sys.detector.get_yolo_detect_turn())
-            # print(sys.detector.get_yolo_detect_turn())
-            
-            
-            if not sys.detector.get_yolo_detect_turn():
-                
-                # 智能控制模式：不调用 detect_frame，直接使用预估坐标
-                print("智能控制模式")
-                sys.detector.reverse_yolo_detect_turn()
-                
-                if sys.detector.get_target_detected():
-                    # 获取预估坐标
-                    smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
-                    
-                    # 调用舵机控制器跟踪目标
-                    sys.servo_controller.track_target(
-                        smart_predicted_target_center_xy_tuple[0], 
-                        smart_predicted_target_center_xy_tuple[1], 
-                        sys.detector.SCREEN_WIDTH, 
-                        sys.detector.SCREEN_HEIGHT
-                    )
-                    
-                    # 更新智能控制参数
-                
-            else:
-                
-                print("YOLO 检测模式")
-                #更新数据，并且翻转YOLO检测模式
-
-                # YOLO 检测模式：调用 detect_frame
-                
-                
-                # 调用 YOLO 检测（只调用一次！）
-                result, annotated_frame = sys.detector.detect_frame()
-                
-                # 更新智能控制参数
-                sys.detector.update_smart_control_params()
-                #翻转模式选择标志位
-                sys.detector.reverse_yolo_detect_turn()
-                
-                # 更新智能控制参数
-                # print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
-            # 4. 检查是否检测到目标
-                if sys.detector.get_target_detected():
-                    # sys.oled.show_text(f"objection detected !", size=12)
-                    sys.rgb_led.set_color_name("red")
-                    
-                    # 调用舵机控制器跟踪目标
-                    obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-                    sys.servo_controller.track_target(
-                        obj_target_center_x, 
-                        obj_target_center_y, 
-                        sys.detector.SCREEN_WIDTH, 
-                        sys.detector.SCREEN_HEIGHT
-                    )
-                    
-                    # 启动蜂鸣器报警
-                    sys.buzzer.start_alarm()
-                    current_d = sys.laser_sensor.distance
-                    print(f"激光测距距离: {current_d} mm")
-                    obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-                    print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
-                else:
-                    print("未检测到目标")
-                    # 停止蜂鸣器报警
-                    sys.buzzer.stop_alarm()
-                    sys.rgb_led.set_color_name("green")
-                    # sys.oled.clear()
-                
-            #5. 调用 CV 屏幕显示逻辑
-            quit_flag = cv_show(annotated_frame, result, sys)
-            
-            # 6. 如果返回 True（按下了 Q），则跳出循环
-            if quit_flag:
-                print("检测到退出信号，正在关闭系统...")
-                break
+            running_code(sys)
