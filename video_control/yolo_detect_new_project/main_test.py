@@ -2,6 +2,7 @@ import cv2
 from yolo_predict import YOLODetector
 from system_manager import SystemManager
 
+#main函数测试版 ，主要功能，是创建一个runing_code 函数 ，去实现各种功能逻辑的调用
 
 def cv_show(frame, results, sys):
     """
@@ -48,6 +49,14 @@ def cv_show(frame, results, sys):
     
     return False
 
+
+def running_code(sys):
+    """
+    主运行函数：处理视频流、YOLO检测、舵机控制
+    :param sys: 系统管理器实例
+    """ 
+    current_program_mode = sys.get_program_mode() #把当前程序运行模式赋值给current_program_mode    
+    
 
 if __name__ == "__main__":
     # 1. 初始化系统管理器，和start方法

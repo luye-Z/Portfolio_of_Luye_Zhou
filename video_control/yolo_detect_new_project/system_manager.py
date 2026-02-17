@@ -35,7 +35,7 @@ class SystemManager:
         self.menu_select_idx = 1  #代表着当前菜单是第一页，也就是OLED显示yolo_detection_vc_show
                                     #一个比较巧妙的设计是，这里的menu_select_idx = 1 和program_mode_storage[1] 是对应的
         self.current_program_mode = self.program_mode_storage[0]                     
-
+        
         # self.mpu6050 = MPU6050driver()
         #mpu6050比较特殊，他需要一点时间去校准传感器
         # self.mpu6050.calibrate()
