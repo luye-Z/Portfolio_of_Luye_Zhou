@@ -3,7 +3,6 @@ from yolo_predict import YOLODetector
 from system_manager import SystemManager
 
 #main函数测试版 ，主要功能，是创建一个runing_code 函数 ，去实现各种功能逻辑的调用
-
 def cv_show(frame, results, sys):
     """
     极简显示函数：只画框和原始视频

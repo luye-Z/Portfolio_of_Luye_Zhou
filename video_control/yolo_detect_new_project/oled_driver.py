@@ -8,26 +8,26 @@ class OLEDDriver:
     def __init__(self, port=1, address=0x3C, width=128, height=64):
         self.serial = i2c(port=port, address=address)
         self.device = ssd1306(self.serial, width=width, height=height)
-        # 加载中文字体
-        self.font_path = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
         
+        # ✅ 在初始化时就预加载字体，而不是每次都加载
+        self.font_12 = ImageFont.truetype(
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 12
+        )
+        self.font_16 = ImageFont.truetype(
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 16
+        )
+    
     def show_text(self, text, size=12, x=10, y=1):
         """在屏幕上显示文本"""
-        font = ImageFont.truetype(self.font_path, size)
+        # 选择预加载的字体
+        font = self.font_12 if size == 12 else self.font_16
+        
         with canvas(self.device) as draw:
-            # 绘制边框和填充背景
-            draw.rectangle(self.device.bounding_box, outline="white", fill="black")
-            # 绘制文本（支持换行）
             draw.text((x, y), text, font=font, fill="white")
-
-    def clear(self):
-        """清空屏幕"""
-        self.device.clear()
-        print("OLED 屏幕已清空")
-
+    
     def cleanup(self):
-        """释放资源"""
-        self.clear()
+        self.device.cleanup()
+        
         
 if __name__ == "__main__":
     
