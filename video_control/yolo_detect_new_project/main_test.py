@@ -1,4 +1,5 @@
 import cv2
+import time
 from yolo_predict import YOLODetector
 from system_manager import SystemManager
 
@@ -52,52 +53,25 @@ def cv_show(frame, results, sys):
 def program_mode_yolodetection_no_show(sys):
     """
     YOLO检测模式（不显示图像）
-    修复版本：移除错误的if条件，直接执行逻辑
+    修复版本：正确的模式切换逻辑
     """
     annotated_frame = None
     result = None
             
-    if not sys.detector.get_yolo_detect_turn():
-                
-                # 智能控制模式：不调用 detect_frame，直接使用预估坐标
-                print("智能控制模式")
-                sys.detector.reverse_yolo_detect_turn()
-                
-                if sys.detector.get_target_detected():
-                    # 获取预估坐标
-                    smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
-                    
-                    # 调用舵机控制器跟踪目标
-                    sys.servo_controller.track_target(
-                        smart_predicted_target_center_xy_tuple[0], 
-                        smart_predicted_target_center_xy_tuple[1], 
-                        sys.detector.SCREEN_WIDTH, 
-                        sys.detector.SCREEN_HEIGHT
-                    )
-                    
-                    # 更新智能控制参数
-                
-    else:
-                
-                print("YOLO 检测模式")
-                #更新数据，并且翻转YOLO检测模式
-
+    if sys.detector.get_yolo_detect_turn():
                 # YOLO 检测模式：调用 detect_frame
-                
+                print("YOLO 检测模式")
                 
                 # 调用 YOLO 检测（只调用一次！）
                 result, annotated_frame = sys.detector.detect_frame()
                 
                 # 更新智能控制参数
                 sys.detector.update_smart_control_params()
-                #翻转模式选择标志位
+                # 翻转模式选择标志位
                 sys.detector.reverse_yolo_detect_turn()
                 
-                # 更新智能控制参数
-                # print(f"Pitch: {sys.mpu6050.get_mpu6050_angle_pose()[0]:.2f}°, Roll: {sys.mpu6050.get_mpu6050_angle_pose()[1]:.2f}°")
-            # 4. 检查是否检测到目标
+                # 检查是否检测到目标
                 if sys.detector.get_target_detected():
-                    # sys.oled.show_text(f"objection detected !", size=12)
                     sys.rgb_led.set_color_name("red")
                     
                     # 调用舵机控制器跟踪目标
@@ -120,6 +94,23 @@ def program_mode_yolodetection_no_show(sys):
                     # 停止蜂鸣器报警
                     sys.buzzer.stop_alarm()
                     sys.rgb_led.set_color_name("green")
+                
+    else:
+                # 智能控制模式：不调用 detect_frame，直接使用预估坐标
+                print("智能控制模式")
+                sys.detector.reverse_yolo_detect_turn()
+                
+                if sys.detector.get_target_detected():
+                    # 获取预估坐标
+                    smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
+                    
+                    # 调用舵机控制器跟踪目标
+                    sys.servo_controller.track_target(
+                        smart_predicted_target_center_xy_tuple[0], 
+                        smart_predicted_target_center_xy_tuple[1], 
+                        sys.detector.SCREEN_WIDTH, 
+                        sys.detector.SCREEN_HEIGHT
+                    )
     
     return annotated_frame, result
 
@@ -158,5 +149,22 @@ if __name__ == "__main__":
         # ✅ 删除了循环前的 detect_frame() 调用
         # 这样可以避免改变初始状态标志位
         sys.program_mode_manager_oled_show()
+        
+        # 性能监控变量
+        frame_count = 0
+        start_time = time.time()
+        last_print_time = start_time
+        
         while True:
             running_code(sys)
+            
+            # 性能监控
+            frame_count += 1
+            current_time = time.time()
+            
+            # 每5秒打印一次帧率
+            if current_time - last_print_time >= 5.0:
+                elapsed = current_time - start_time
+                fps = frame_count / elapsed
+                print(f"[PERFORMANCE] Frames: {frame_count}, Time: {elapsed:.2f}s, FPS: {fps:.2f}")
+                last_print_time = current_time

@@ -36,7 +36,7 @@ class SystemManager:
         # 这些模式中，第一个也就是索引号是0是菜单模式，剩下的是运行模式
         self.program_mode_storage = ("program menu","yolo detection\nvc show","yolo detection\nno image")
         self.menu_select_idx = 1
-        self.current_program_mode = self.program_mode_storage[0]
+        self.current_program_mode = self.program_mode_storage[1]
         
         # ============ OLED 性能优化部分 ============
         # OLED ��新队列，用于线程间通信
@@ -91,30 +91,36 @@ class SystemManager:
     
     def _oled_update_worker(self):
         """
-        OLED 更新工作线程
+        OLED 更新工作线程（优化版）
         在独立线程中处理 OLED I2C 通信，不阻塞主程序
-        采用智能节流机制：
-        1. 非按键事件：限制更新频率为 2Hz（500ms 间隔）
-        2. 按键事件：立即更新（force_oled_update=True）
+        进一步优化：
+        - 增加线程睡眠时间，降低 CPU 占用
+        - 更严格的更新条件判断
         """
         while self.oled_thread_running:
             try:
-                # 非阻塞获取队列中的数据（超时 100ms）
-                display_text = self.oled_update_queue.get(timeout=0.1)
+                # 非阻塞获取队列中的数据（超时 0.1秒）
+                try:
+                    display_text = self.oled_update_queue.get_nowait()
+                except:
+                    # 没有新数据，休眠更长时间，降低CPU占用
+                    time.sleep(0.1)
+                    continue
                 
                 current_time = time.time()
                 time_elapsed = current_time - self.last_oled_update_time
                 
-                # 判断是否需要更新：
+                # 更严格的更新条件：
+                # 只在以下情况更新 OLED
                 # 1. force_oled_update=True：按键事件，立即更新
-                # 2. 距离上次更新超过 OLED_UPDATE_MIN_INTERVAL
-                # 3. 显示内容改变
+                # 2. 距离上次更新超过 OLED_UPDATE_MIN_INTERVAL 且内容改变
+                should_update = False
                 
-                should_update = (
-                    self.force_oled_update or 
-                    time_elapsed >= self.OLED_UPDATE_MIN_INTERVAL or
-                    display_text != self.last_oled_display_text
-                )
+                if self.force_oled_update:
+                    should_update = True
+                elif (time_elapsed >= self.OLED_UPDATE_MIN_INTERVAL and 
+                      display_text != self.last_oled_display_text):
+                    should_update = True
                 
                 if should_update:
                     # 执行 I2C 通信（这个操作比较慢，50-200ms）
@@ -125,43 +131,43 @@ class SystemManager:
                     self.last_oled_display_text = display_text
                     self.force_oled_update = False  # 重置强制更新标志
                     
-            except:
-                # 队列超时（没有新数据），继续等待
-                pass
+            except Exception as e:
+                # 捕获所有异常，防止线程崩溃
+                time.sleep(0.1)
+                continue
     
     def program_mode_manager_oled_show(self, force_update=False):
         """
-        非阻塞式 OLED 更新函数
+        非阻塞式 OLED 更新函数（优化版）
         
         :param force_update: 是否立即更新（用于按键事件）
         
-        说明：
-        - 正常情况下：将更新请求放入队列，由后台线程处理，不阻塞主程序
-        - 按键事件时：设置 force_update=True，立即更新 OLED 以获得快速响应
+        优化点：
+        - 先判断内容是否改变，避免不必要的队列操作
+        - 减少 CPU 开销
         """
         
-        # 1. 如果处于"菜单模式"
+        # 1. 生成显示文本
         if self.current_program_mode == self.program_mode_storage[0]:
             selected_name = self.program_mode_storage[self.menu_select_idx]
             display_text = f"--- MENU ---\n> {selected_name}"
-        
-        # 2. 如果处于"YOLO 显示模式"
         elif self.current_program_mode == self.program_mode_storage[1]:
             display_text = "RUNNING:\nDetection + CV"
-        
-        # 3. 如果处于"YOLO 静默模式"
         elif self.current_program_mode == self.program_mode_storage[2]:
             display_text = "RUNNING:\nHeadless Mode"
         else:
             return  # 异常模式，不更新
         
-        # 按键事件时设置强制更新标志
+        # 2. 检查是否真的需要更新（内容相同且非强制更新则跳过）
+        if not force_update and display_text == self.last_oled_display_text:
+            return  # 内容没变，直接跳过，不放入队列
+        
+        # 3. 按键事件时设置强制更新标志
         if force_update:
             self.force_oled_update = True
         
-        # 将更新请求放入队列（非阻塞）
+        # 4. 将更新请求放入队列（非阻塞）
         try:
-            # maxsize=1 意味着队列只保存最新的一条请求
             self.oled_update_queue.put_nowait(display_text)
         except:
             # 队列满时舍弃旧请求，放入新请求

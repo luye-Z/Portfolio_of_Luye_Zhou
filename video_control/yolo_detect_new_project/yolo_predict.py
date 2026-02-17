@@ -38,7 +38,7 @@ class YOLODetector:
         
         
         # 标志位，用于计数，是否调用YOLO—detect_frame方法,只有两种状态，另一种状态直接调用预估像素坐标数据进行控制
-        self.yolo_detect_turn = True   
+        self.yolo_detect_turn = False   
         
         #SMART CONTROL 参数预先存储
         self.smart_last_target_center_x = self.SCREEN_WIDTH/2
