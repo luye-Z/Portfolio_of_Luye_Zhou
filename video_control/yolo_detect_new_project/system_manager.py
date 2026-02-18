@@ -34,7 +34,7 @@ class SystemManager:
             )
         
         # 这些模式中，第一个也就是索引号是0是菜单模式，剩下的是运行模式
-        self.program_mode_storage = ("program menu","yolo detection\nvc show","yolo detection\nno image")
+        self.program_mode_storage = ("program menu","yolo detection\nvc show","yolo detection\nno image","yolo detection\nno buzzer","yolo detection\nno image no buzzer")
         self.menu_select_idx = 1
         self.current_program_mode = self.program_mode_storage[0]
         
@@ -155,6 +155,10 @@ class SystemManager:
             display_text = "RUNNING:\nDetection + CV"
         elif self.current_program_mode == self.program_mode_storage[2]:
             display_text = "RUNNING:\nHeadless Mode"
+        elif self.current_program_mode == self.program_mode_storage[3]:
+            display_text = "RUNNING:\nDetect No Buzzer"
+        elif self.current_program_mode == self.program_mode_storage[4]:
+            display_text = "RUNNING:\nHeadless No Buzzer"
         else:
             return  # 异常模式，不更新
         
