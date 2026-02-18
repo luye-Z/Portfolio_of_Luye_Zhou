@@ -2,6 +2,10 @@ import cv2
 import time
 from yolo_predict import YOLODetector
 from system_manager import SystemManager
+import os
+import csv
+from datetime import datetime
+
 
 #main函数测试版 ，主要功能，是创建一个runing_code 函数 ，去实现各种功能逻辑的调用
 def cv_show(frame, results, sys):
@@ -203,9 +207,7 @@ def program_mode_yolodetection_show_no_buzzer(sys):
     
     return False
 
-import os
-import csv
-from datetime import datetime
+
 
 def program_mode_draw_record_chart(sys):
     """
@@ -214,73 +216,55 @@ def program_mode_draw_record_chart(sys):
     在当前路径下新建 detection_records 文件夹，按时间戳新建 CSV 文件。
     """
     
+def program_mode_draw_record_chart(sys):
     annotated_frame = None
     result = None
 
-    # ========== 初始化记录文件（首次调用时创建） ==========
+    # 1. ========== 初始化记录文件 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
-        # 新建文件夹
         record_dir = os.path.join(os.getcwd(), "detection_records")
         os.makedirs(record_dir, exist_ok=True)
         
-        # 按时间戳命名文件
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        sys._record_file_path = os.path.join(record_dir, f"record_{timestamp}.csv")
+        # 记录本次运行的时间戳，用于 CSV 和图片命名
+        sys._run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        sys._record_file_path = os.path.join(record_dir, f"record_{sys._run_timestamp}.csv")
         
-        # 写入表头
         with open(sys._record_file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(["timestamp", "center_x", "center_y"])
-        
         print(f"记录文件已创建：{sys._record_file_path}")
 
-    # ========== YOLO 检测模式 ==========
+    # 2. ========== YOLO 检测逻辑 ==========
     if sys.detector.get_yolo_detect_turn():
-        print("YOLO 检测模式")
-
         result, annotated_frame = sys.detector.detect_frame()
         sys.detector.update_smart_control_params()
         sys.detector.reverse_yolo_detect_turn()
 
         if sys.detector.get_target_detected():
             sys.rgb_led.set_color_name("red")
+            x, y = sys.detector.get_target_center()
 
-            obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-
-            # ===== 核心：写入坐标到文件 =====
+            # 写入 CSV
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             with open(sys._record_file_path, "a", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f)
-                writer.writerow([current_time, f"{obj_target_center_x:.2f}", f"{obj_target_center_y:.2f}"])
-
-            print(f"[记录] 目标中心坐标：({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+                writer.writerow([current_time, f"{x:.2f}", f"{y:.2f}"])
 
             # 舵机跟踪
-            sys.servo_controller.track_target(
-                obj_target_center_x,
-                obj_target_center_y,
-                sys.detector.SCREEN_WIDTH,
-                sys.detector.SCREEN_HEIGHT
-            )
-
+            sys.servo_controller.track_target(x, y, sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
+            
+            # --- 核心：每帧更新后重新绘制并保存图片 ---
+            # 为了性能，建议你可以根据需要设置触发频率，比如每 10 帧更新一次图表
+            # 或者在程序结束时调用。这里演示实时保存：
         else:
-            print("未检测到目标，本帧不记录")
             sys.rgb_led.set_color_name("green")
 
-    # ========== 智能控制模式（帧间预估） ==========
     else:
-        print("智能控制模式")
+        # 智能控制模式
         sys.detector.reverse_yolo_detect_turn()
-
         if sys.detector.get_target_detected():
-            smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
-
-            sys.servo_controller.track_target(
-                smart_predicted_target_center_xy_tuple[0],
-                smart_predicted_target_center_xy_tuple[1],
-                sys.detector.SCREEN_WIDTH,
-                sys.detector.SCREEN_HEIGHT
-            )
+            p_x, p_y = sys.detector.calculate_smart_control_target_center()
+            sys.servo_controller.track_target(p_x, p_y, sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
 
     return annotated_frame, result
     
