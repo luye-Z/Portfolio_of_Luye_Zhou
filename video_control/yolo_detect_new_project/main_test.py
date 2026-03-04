@@ -102,7 +102,7 @@ def program_mode_yolodetection_no_show(sys):
                     print("未检测到目标")
                     # 停止蜂鸣器报警
                     sys.buzzer.stop_alarm()
-                    sys.rgb_led.set_color_name("green")
+                    sys.rgb_led.set_color_name("white")
                 
     else:
                 # 智能控制模式：不调用 detect_frame，直接使用预估坐标
