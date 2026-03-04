@@ -76,8 +76,8 @@ def program_mode_yolodetection_no_show(sys):
                 
                 # 检查是否检测到目标
                 if sys.detector.get_target_detected():
-                    sys.rgb_led.set_color_name("red")
                     
+
                     # 调用舵机控制器跟踪目标
                     obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
                     sys.servo_controller.track_target(
@@ -87,8 +87,12 @@ def program_mode_yolodetection_no_show(sys):
                         sys.detector.SCREEN_HEIGHT
                     )
                     
-                    # 启动蜂鸣器报警
+
+                    #activate indicator led and buzzer
+                    sys.rgb_led.set_color_name("red")
                     sys.buzzer.start_alarm()
+                    
+                    
                     current_d = sys.laser_sensor.distance
                     print(f"激光测距距离: {current_d} mm")
                     obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
