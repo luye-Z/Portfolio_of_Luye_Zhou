@@ -6,8 +6,16 @@ import re
 
 # --- 1. 自动生成递增文件名 ---
 def get_next_filename(base_name="tracking_analysis", ext=".png"):
-    # 获取当前目录下所有文件
-    files = os.listdir('.')
+    # 设置保存文件的路径
+    save_dir = './detection_records_analysis_records'
+    
+    # 确保目录存在
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    
+    # 获取目标目录下所有文件
+    files = os.listdir(save_dir)
+    
     # 匹配 base_name + _n + ext 的模式
     pattern = re.compile(rf"^{base_name}(?:_(\d+))?{ext}$")
     
@@ -24,9 +32,9 @@ def get_next_filename(base_name="tracking_analysis", ext=".png"):
                 max_num = max(max_num, 0)
     
     if not found:
-        return f"{base_name}{ext}"
+        return os.path.join(save_dir, f"{base_name}{ext}")
     else:
-        return f"{base_name}_{max_num + 1}{ext}"
+        return os.path.join(save_dir, f"{base_name}_{max_num + 1}{ext}")
 
 # --- 2. 数据准备与计算 ---
 SCREEN_WIDTH = 864 / 2
