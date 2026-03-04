@@ -129,6 +129,8 @@ class ServoController:
         self._set_angle(self.servo_pan, 0)
 
         self._set_angle(self.servo_tilt, 90)
+        
+        
 
 
 

@@ -79,12 +79,20 @@ class SystemManager:
         time.sleep(0.5)
         
         # 清理资源
+        
+        # 确保蜂鸣器停止报警，然后再清理BUZZER资源
+        self.buzzer.stop_alarm()
         self.buzzer.cleanup()
+        
         # self.oled.cleanup()
         self.laser_sensor.cleanup()
         self.detector.cleanup()
         self.servo_controller.cleanup()
+        
+        # 确保 LED 熄灭,然后再清理RGB资源
+        self.rgb_led.off()
         self.rgb_led.cleanup()
+        
         self.button_driver.cleanup()
         # self.mpu6050.cleanup()
         print("[System] 所有资源已安全释放")
@@ -206,10 +214,11 @@ class SystemManager:
             
             # 按键事件：强制立即更新 OLED
             self.program_mode_manager_oled_show(force_update=True)
-            
+                    
             #还需要清理一些GPIO外设，蜂鸣器，RGB灯，等等，要不然可能会出现模式切换，蜂鸣器一直卡在鸣叫的状态里面
             self.rgb_led.off() # 关闭RGB灯
             self.buzzer.stop_alarm() # 关闭蜂鸣器
+            self.servo_controller.reset() # 重置舵机角度
     
     def action_double_click(self):
         """双击处理"""

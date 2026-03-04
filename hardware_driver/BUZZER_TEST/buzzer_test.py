@@ -9,6 +9,6 @@ GPIO.setup(BUZZER_PIN, GPIO.OUT)
 
 while True:
     GPIO.output(BUZZER_PIN, GPIO.HIGH)
-    time.sleep(0.5)
+    time.sleep(0.2)
     GPIO.output(BUZZER_PIN, GPIO.LOW)
-    time.sleep(0.5)
+    time.sleep(0.2)
