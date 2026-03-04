@@ -75,7 +75,8 @@ def program_mode_yolodetection_no_show(sys):
                 sys.detector.reverse_yolo_detect_turn()
                 
                 # 检查是否检测到目标
-                if sys.detector.get_target_detected():
+                #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+                if sys.detector.get_target_detected() and sys.get_program_mode() == "yolo detection\nno image":
                     
 
                     # 调用舵机控制器跟踪目标
