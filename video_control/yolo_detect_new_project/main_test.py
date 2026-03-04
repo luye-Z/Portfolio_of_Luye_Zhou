@@ -227,17 +227,29 @@ def program_mode_draw_record_chart(sys):
 
     # 1. ========== 初始化记录文件 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
-        record_dir = os.path.join(os.getcwd(), "detection_records")
+        # --- 核心修改：相对路径定位 ---
+        # 获取当前脚本 (main_test.py) 所在的绝对目录
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 定位到 detection_records_analyse/detection_records
+        record_dir = os.path.join(
+            current_script_dir, 
+            "detection_records_analyse", 
+            "detection_records"
+        )
+        
+        # 确保目录存在
         os.makedirs(record_dir, exist_ok=True)
         
-        # 记录本次运行的时间戳，用于 CSV 和图片命名
+        # 记录本次运行的时间戳
         sys._run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         sys._record_file_path = os.path.join(record_dir, f"record_{sys._run_timestamp}.csv")
         
+        # 创建文件并写入表头
         with open(sys._record_file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(["timestamp", "center_x", "center_y"])
-        print(f"记录文件已创建：{sys._record_file_path}")
+        print(f"[SYSTEM] 相对路径记录已启动: {sys._record_file_path}")
 
     # 2. ========== YOLO 检测逻辑 ==========
     if sys.detector.get_yolo_detect_turn():
