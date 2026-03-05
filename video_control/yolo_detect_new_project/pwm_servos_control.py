@@ -6,7 +6,7 @@ from rpi_hardware_pwm import HardwarePWM
 
 class ServoController:
 
-    def __init__(self, pan_chan=0, tilt_chan=1, chip_id=0, kp_pan=0.2, kp_tilt=0.2, kd_pan=0.1, kd_tilt=0.1):
+    def __init__(self, pan_chan=0, tilt_chan=1, chip_id=0, kp_pan=0.4, kp_tilt=0.2, kd_pan=0.1, kd_tilt=0.1):
 
         """
 
