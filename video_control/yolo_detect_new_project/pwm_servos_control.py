@@ -6,15 +6,16 @@ from rpi_hardware_pwm import HardwarePWM
 
 class ServoController:
 
-    def __init__(self, pan_chan=0, tilt_chan=1, chip_id=0, kp_pan=0.2, kp_tilt=0.2):
+    def __init__(self, pan_chan=0, tilt_chan=1, chip_id=0, kp_pan=0.2, kp_tilt=0.2, kd_pan=0.1, kd_tilt=0.1):
 
         """
 
-        集成了 P 控制算法的舵机控制器
+        集成了 PD 控制算法的舵机控制器
 
         :param kp_pan: 水平比例系数（通常 0.1~0.6）
-
         :param kp_tilt: 垂直比例系数
+        :param kd_pan: 水平微分系数（通常 0.05~0.3）
+        :param kd_tilt: 垂直微分系数
 
         """
 
@@ -34,12 +35,12 @@ class ServoController:
 
         
 
-        # P 控制参数
+        # PD 控制参数
 
         self.kp_pan = kp_pan
-
         self.kp_tilt = kp_tilt
-
+        self.kd_pan = kd_pan
+        self.kd_tilt = kd_tilt
         self.dead_zone = 10  # 死区（像素）
 
 
@@ -49,6 +50,10 @@ class ServoController:
         self.current_pan = 0.0
 
         self.current_tilt = 90.0  # 初始向上看
+        
+        # PD 控制需要上一次误差
+        self.last_error_x = 0.0
+        self.last_error_y = 0.0
 
         
 
@@ -58,7 +63,7 @@ class ServoController:
 
         self.servo_tilt.start(12.5)
 
-        print(f"PID-Ready ServoController: Kp_P={kp_pan}, Kp_T={kp_tilt}")
+        print(f"PD-Ready ServoController: Kp_P={kp_pan}, Kp_T={kp_tilt}, Kd_P={kd_pan}, Kd_T={kd_tilt}")
 
 
 
@@ -78,7 +83,7 @@ class ServoController:
 
         """
 
-        P算法核心：根据目标位置更新舵机角度
+        PD算法核心：根据目标位置更新舵机角度
 
         """
 
@@ -87,6 +92,10 @@ class ServoController:
         error_x = target_x - (screen_w / 2)
 
         error_y = target_y - (screen_h / 2)
+        
+        # 计算误差变化率（微分项）
+        error_diff_x = error_x - self.last_error_x
+        error_diff_y = error_y - self.last_error_y
 
 
 
@@ -94,9 +103,8 @@ class ServoController:
 
         if abs(error_x) > self.dead_zone:
 
-            # P 控制公式
-
-            delta_pan = (error_x * self.DEG_PER_PIX) * self.kp_pan
+            # PD 控制公式：delta = kp * error + kd * (error - last_error)
+            delta_pan = (error_x * self.DEG_PER_PIX) * self.kp_pan + (error_diff_x * self.DEG_PER_PIX) * self.kd_pan
 
             self.current_pan -= delta_pan  # 镜像调整
 
@@ -108,11 +116,15 @@ class ServoController:
 
         if abs(error_y) > self.dead_zone:
 
-            delta_tilt = (error_y * self.DEG_PER_PIX) * self.kp_tilt
+            delta_tilt = (error_y * self.DEG_PER_PIX) * self.kp_tilt + (error_diff_y * self.DEG_PER_PIX) * self.kd_tilt
 
-            self.current_tilt += delta_tilt 
+            self.current_tilt += delta_tilt
 
             self._set_angle(self.servo_tilt, self.current_tilt)
+        
+        # 4. 更新上一次误差
+        self.last_error_x = error_x
+        self.last_error_y = error_y
 
 
 
@@ -125,6 +137,8 @@ class ServoController:
         """复位"""
 
         self.current_pan, self.current_tilt = 0, 90
+        self.last_error_x = 0.0
+        self.last_error_y = 0.0
 
         self._set_angle(self.servo_pan, 0)
 
