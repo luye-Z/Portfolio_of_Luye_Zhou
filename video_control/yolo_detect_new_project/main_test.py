@@ -54,7 +54,7 @@ def cv_show(frame, results, sys):
     return False
 
 
-def program_mode_yolodetection_no_show(sys):
+def program_mode_yolodetection_no_show(sys , activate_buzzer=True): #添加了蜂鸣器控制参数，默认开启蜂鸣器
     """
     YOLO检测模式（不显示图像）
     修复版本：正确的模式切换逻辑
@@ -70,7 +70,9 @@ def program_mode_yolodetection_no_show(sys):
                 result, annotated_frame = sys.detector.detect_frame()
                 
                 # 更新智能控制参数
+                #算法来自于smart_control_algorithm 模块 ， 数据来源于yolo_predict 模块
                 sys.smart_control_algorithm.update_smart_control_params(sys.detector.get_target_center_x(),sys.detector.get_target_center_y())
+                
                 # 翻转模式选择标志位
                 sys.detector.reverse_yolo_detect_turn()
                 
@@ -91,7 +93,9 @@ def program_mode_yolodetection_no_show(sys):
 
                     #activate indicator led and buzzer
                     sys.rgb_led.set_color_name("red")
-                    sys.buzzer.start_alarm()
+                    
+                    if activate_buzzer: #检查蜂鸣器控制参数
+                        sys.buzzer.start_alarm()
                     
                     
                     current_d = sys.laser_sensor.distance
@@ -100,8 +104,11 @@ def program_mode_yolodetection_no_show(sys):
                     print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
                 else:
                     print("未检测到目标")
+                    
                     # 停止蜂鸣器报警
-                    sys.buzzer.stop_alarm()
+                    if activate_buzzer:#检查蜂鸣器控制参数
+                        sys.buzzer.stop_alarm()
+                        
                     sys.rgb_led.set_color_name("green")
                 
     else:

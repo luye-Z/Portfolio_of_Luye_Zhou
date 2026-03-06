@@ -49,7 +49,7 @@ class YOLODetector:
         """获取self.yolo_detect_turn的接口方法"""
         return self.yolo_detect_turn
         
-    def get_target_detected(self):
+    def get_target_detected(self): #返回真，则说明当前帧检测到了目标
         """获取是否检测到目标"""
         return self.target_detected
     
