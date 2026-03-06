@@ -49,7 +49,7 @@ class YOLODetector:
         """获取self.yolo_detect_turn的接口方法"""
         return self.yolo_detect_turn
         
-    def get_target_detected(self): #返回真，则说明当前帧检测到了目标
+    def get_if_target_detected(self): #返回真，则说明当前帧检测到了目标
         """获取是否检测到目标"""
         return self.target_detected
     
@@ -193,7 +193,7 @@ if __name__ == "__main__":
         try:
             for i in range(5):
                 result, frame = detector.detect_frame()
-                if detector.get_target_detected():
+                if detector.get_if_target_detected():
                     x, y = detector.get_target_center()
                     print(f"  测试 {i+1}: ✅ 目标检测到 - 中心: ({x:.1f}, {y:.1f})")
                 else:
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     try:
         for i in range(5):
             result, frame = detector.detect_frame()
-            if detector.get_target_detected():
+            if detector.get_if_target_detected():
                 x, y = detector.get_target_center()
                 print(f"  测试 {i+1}: ✅ 目标检测到 - 中心: ({x:.1f}, {y:.1f})")
             else:
