@@ -70,7 +70,7 @@ def program_mode_yolodetection_no_show(sys):
                 result, annotated_frame = sys.detector.detect_frame()
                 
                 # 更新智能控制参数
-                sys.detector.update_smart_control_params()
+                sys.smart_control_algorithm.update_smart_control_params(sys.detector.get_target_center_x(),sys.detector.get_target_center_y())
                 # 翻转模式选择标志位
                 sys.detector.reverse_yolo_detect_turn()
                 
@@ -111,7 +111,7 @@ def program_mode_yolodetection_no_show(sys):
                 
                 if sys.detector.get_target_detected():
                     # 获取预估坐标
-                    smart_predicted_target_center_xy_tuple = sys.detector.calculate_smart_control_target_center()
+                    smart_predicted_target_center_xy_tuple = sys.smart_control_algorithm.calculate_smart_control_target_center()
                     
                     # 调用舵机控制器跟踪目标
                     sys.servo_controller.track_target(

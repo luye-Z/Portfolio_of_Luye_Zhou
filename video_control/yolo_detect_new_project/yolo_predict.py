@@ -10,8 +10,13 @@ class YOLODetector:
         self.imgsz = imgsz
         self.conf = conf
         
+        #初始化屏幕分辨率参数
         self.SCREEN_WIDTH = 864
         self.SCREEN_HEIGHT = 640
+        
+        self.target_center_x = self.SCREEN_WIDTH/2
+        self.target_center_y = self.SCREEN_HEIGHT/2
+        
         # 1. 初始化 PiCamera2
         self.picam2 = Picamera2()
         config = self.picam2.create_preview_configuration(
@@ -30,72 +35,24 @@ class YOLODetector:
         
         #4.数据成员，是否检测到目标，布尔变量，标志位
         self.target_detected = False 
-        #5. 目标中心坐标
-        
-        self.target_center_x = self.SCREEN_WIDTH/2
-        self.target_center_y = self.SCREEN_HEIGHT/2
-        
-        
         
         # 标志位，用于计数，是否调用YOLO—detect_frame方法,只有两种状态，另一种状态直接调用预估像素坐标数据进行控制
         self.yolo_detect_turn = False   
         
-        #SMART CONTROL 参数预先存储
-        self.smart_last_target_center_x = self.SCREEN_WIDTH/2
-        self.smart_last_target_center_y = self.SCREEN_HEIGHT/2
-        self.smart_now_target_center_x = self.SCREEN_WIDTH/2
-        self.smart_now_target_center_y = self.SCREEN_HEIGHT/2
     
-    def update_smart_control_params(self):
-        
-        """更新SMART CONTROL 参数"""
-        """这个参数更新只在 实际执行yolo_detect 轮次执行"""
-        
-        self.smart_last_target_center_x = self.smart_now_target_center_x
-        self.smart_last_target_center_y = self.smart_now_target_center_y
-        self.smart_now_target_center_x = self.get_target_center_x()
-        self.smart_now_target_center_y = self.get_target_center_y()
-        
         # 切换标志位
     def reverse_yolo_detect_turn(self):
         """切换YOLO检测模式"""
         self.yolo_detect_turn = not self.yolo_detect_turn
-    
-    def get_smart_control_params(self):
-        """获取SMART CONTROL 参数"""
-        return self.smart_last_target_center_x, self.smart_last_target_center_y, self.smart_now_target_center_x, self.smart_now_target_center_y
-    
-    def calculate_smart_control_target_center(self):
-        """计算智能超前预估控制的目标中心坐标"""
-        
-        dx = self.smart_now_target_center_x - self.smart_last_target_center_x
-        dy = self.smart_now_target_center_y - self.smart_last_target_center_y
-        smart_predicted_target_center_x = self.smart_now_target_center_x + dx
-        smart_predicted_target_center_y = self.smart_now_target_center_y + dy
-        
-        return smart_predicted_target_center_x, smart_predicted_target_center_y
-        
-        
-    def get_yolo_detect_turn(self):
+
+    def get_yolo_detect_turn(self): #返回真，则说明当前模式是yolo检测模式
         """获取self.yolo_detect_turn的接口方法"""
         return self.yolo_detect_turn
-        
         
     def get_target_detected(self):
         """获取是否检测到目标"""
         return self.target_detected
     
-    def get_target_center(self):
-        """获取目标中心坐标"""
-        return self.target_center_x, self.target_center_y
-    
-    def get_target_center_x(self):
-        """获取目标中心坐标"""
-        return self.target_center_x
-    
-    def get_target_center_y(self):
-        """获取目标中心坐标"""
-        return  self.target_center_y    
     def start(self):
         """启动相机"""
         self.picam2.start()
@@ -167,6 +124,19 @@ class YOLODetector:
         
         # 直接返回原始帧，不绘制标注
         return result, frame
+    
+    def get_target_center(self):
+        """获取目标中心坐标"""
+        return self.target_center_x, self.target_center_y
+    
+    def get_target_center_x(self):
+        """获取目标中心坐标"""
+        return self.target_center_x
+    
+    def get_target_center_y(self):
+        """获取目标中心坐标"""
+        return  self.target_center_y   
+    
     
     def _print_report(self, duration):
         """内部方法：打印简化性能报告"""
