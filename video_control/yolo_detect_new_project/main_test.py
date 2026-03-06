@@ -159,12 +159,18 @@ def program_mode_yolodetection_no_smart_control(sys):
 
         # 调用舵机控制器跟踪目标
         obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        # 调用 PID 控制器计算角度
         sys.pid_controller.pid_control_calculate(
             obj_target_center_x, 
             obj_target_center_y, 
             sys.detector.SCREEN_WIDTH, 
             sys.detector.SCREEN_HEIGHT
         )
+         # 获取 PID 控制器输出
+        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+        #控制舵机运动
+        sys.servo_controller.set_pan_angle(pan_controller_output)
+        sys.servo_controller.set_tilt_angle(tilt_controller_output)
         
 
         #activate indicator led and buzzer
