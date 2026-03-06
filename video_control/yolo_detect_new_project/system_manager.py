@@ -8,7 +8,7 @@ from rgb_led_control import LEDController
 from mpu6050_driver import MPU6050driver
 from button_driver import ButtonDriver
 from smart_control_algorithm import SmartControlAlgorithm
-
+from PID_controller import PIDController
 import time
 import threading
 from queue import Queue
@@ -26,7 +26,7 @@ class SystemManager:
         self.servo_controller = ServoController()
         self.rgb_led = LEDController(brightness=0.01)
         self.smart_control_algorithm = SmartControlAlgorithm()# 初始化智能超前预估控制算法
-        
+        self.pid_controller = PIDController()
         
         # 初始化按键驱动,并且直接注册了三个按键触发函数
         self.button_driver = ButtonDriver(

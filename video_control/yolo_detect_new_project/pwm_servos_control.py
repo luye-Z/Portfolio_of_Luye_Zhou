@@ -31,29 +31,11 @@ class ServoController:
 
         self.SERVO_MIN, self.SERVO_MAX = -90, 90
 
-        self.DEG_PER_PIX = 77.0 / 864  # 根据你的 SCREEN_WIDTH 自动适配
+        # self.DEG_PER_PIX = 77.0 / 864  # 根据你的 SCREEN_WIDTH 自动适配
 
         
 
-        # PD 控制参数
-
-        self.kp_pan = kp_pan
-        self.kp_tilt = kp_tilt
-        self.kd_pan = kd_pan
-        self.kd_tilt = kd_tilt
-        self.dead_zone = 10  # 死区（像素）
-
-
-
-        # 状态记录
-
-        self.current_pan = 0.0
-
-        self.current_tilt = 90.0  # 初始向上看
-        
-        # PD 控制需要上一次误差
-        self.last_error_x = 0.0
-        self.last_error_y = 0.0
+  
 
         
 
@@ -63,7 +45,7 @@ class ServoController:
 
         self.servo_tilt.start(12.5)
 
-        print(f"PD-Ready ServoController: Kp_P={kp_pan}, Kp_T={kp_tilt}, Kd_P={kd_pan}, Kd_T={kd_tilt}")
+        # print(f"PD-Ready ServoController: Kp_P={kp_pan}, Kp_T={kp_tilt}, Kd_P={kd_pan}, Kd_T={kd_tilt}")
 
 
 
@@ -76,59 +58,17 @@ class ServoController:
         duty = (angle + 90) * (10 / 180) + 2.5
 
         pwm_obj.change_duty_cycle(duty)
+    def set_pan_angle(self, angle):
 
+        """设置水平角度"""
 
-
-    def track_target(self, target_x, target_y, screen_w, screen_h):
-
-        """
-
-        PD算法核心：根据目标位置更新舵机角度
-
-        """
-
-        # 1. 计算误差 (Error)
-
-        error_x = target_x - (screen_w / 2)
-
-        error_y = target_y - (screen_h / 2)
+        self._set_angle(self.servo_pan, angle)  
         
-        # 计算误差变化率（微分项）
-        error_diff_x = error_x - self.last_error_x
-        error_diff_y = error_y - self.last_error_y
+    def set_tilt_angle(self, angle):
 
+        """设置垂直角度"""
 
-
-        # 2. 水平追踪 (Pan)
-
-        if abs(error_x) > self.dead_zone:
-
-            # PD 控制公式：delta = kp * error + kd * (error - last_error)
-            delta_pan = (error_x * self.DEG_PER_PIX) * self.kp_pan + (error_diff_x * self.DEG_PER_PIX) * self.kd_pan
-
-            self.current_pan -= delta_pan  # 镜像调整
-
-            self._set_angle(self.servo_pan, self.current_pan)
-
-
-
-        # 3. 垂直追踪 (Tilt)
-
-        if abs(error_y) > self.dead_zone:
-
-            delta_tilt = (error_y * self.DEG_PER_PIX) * self.kp_tilt + (error_diff_y * self.DEG_PER_PIX) * self.kd_tilt
-
-            self.current_tilt += delta_tilt
-
-            self._set_angle(self.servo_tilt, self.current_tilt)
-        
-        # 4. 更新上一次误差
-        self.last_error_x = error_x
-        self.last_error_y = error_y
-
-
-
-        return self.current_pan, self.current_tilt
+        self._set_angle(self.servo_tilt, angle) 
 
 
 
