@@ -123,6 +123,59 @@ def program_mode_yolodetection_no_show(sys):
     
     return annotated_frame, result
 
+def program_mode_yolodetection_no_smart_control(sys):
+    """
+    YOLO检测模式（不显示图像,不使用智能控制）
+    修复版本：正确的模式切换逻辑
+    """
+    annotated_frame = None
+    result = None
+            
+
+    # YOLO 检测模式：调用 detect_frame
+    print("YOLO 检测模式")
+    
+    # 调用 YOLO 检测（只调用一次！）
+    result, annotated_frame = sys.detector.detect_frame()
+    
+    # 更新智能控制参数
+    sys.detector.update_smart_control_params()
+    # 翻转模式选择标志位
+    sys.detector.reverse_yolo_detect_turn()
+    
+    # 检查是否检测到目标
+    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+    if sys.detector.get_target_detected() and sys.get_program_mode() == "yolo detection\nno smart control":
+        
+
+        # 调用舵机控制器跟踪目标
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        sys.servo_controller.track_target(
+            obj_target_center_x, 
+            obj_target_center_y, 
+            sys.detector.SCREEN_WIDTH, 
+            sys.detector.SCREEN_HEIGHT
+        )
+        
+
+        #activate indicator led and buzzer
+        sys.rgb_led.set_color_name("red")
+        sys.buzzer.start_alarm()
+        
+        
+        current_d = sys.laser_sensor.distance
+        print(f"激光测距距离: {current_d} mm")
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+    else:
+        print("未检测到目标")
+        # 停止蜂鸣器报警
+        sys.buzzer.stop_alarm()
+        sys.rgb_led.set_color_name("green")
+    
+
+    
+    return annotated_frame, result
 
 def program_mode_yolodetection_show(sys):
     """
@@ -304,6 +357,8 @@ def running_code(sys):
         program_mode_yolodetection_no_show_no_buzzer(sys)
     elif current_program_mode =="draw_record_chart":
         program_mode_draw_record_chart(sys)
+    elif current_program_mode =="yolo detection\nno smart control":
+        program_mode_yolodetection_no_smart_control(sys)
         
     
         
