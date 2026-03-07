@@ -54,7 +54,7 @@ def cv_show(frame, results, sys):
     return False
 
 
-def program_mode_yolo_detection(sys , activate_buzzer=True): #添加了蜂鸣器控制参数，默认开启蜂鸣器
+def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     
     annotated_frame = None
@@ -103,47 +103,30 @@ def program_mode_yolo_detection(sys , activate_buzzer=True): #添加了蜂鸣器
     
 
     
-    return annotated_frame, result
+    if annotated_frame is not None and result is not None and activate_screen_show:
+        cv_show(annotated_frame, result, sys)
 
 
 
 def program_mode_yolodetection_show(sys):
-    """
-    YOLO检测模式（显示图像）
-    """
-    annotated_frame, result = program_mode_yolo_detection(sys)
-    
-    # 添加空值检查，防止None被传入cv_show
-    if annotated_frame is not None and result is not None:
-        quit_flag = cv_show(annotated_frame, result, sys)
-        return quit_flag
-    
-    return False
+    program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=True)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
 
-    program_mode_yolo_detection(sys , activate_buzzer=False)
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=False)
     
     
 def program_mode_yolodetection_show_no_buzzer(sys):   
-    annotated_frame, result = program_mode_yolodetection_no_show_no_buzzer(sys)
-    
-    # 添加空值检查，防止None被传入cv_show
-    if annotated_frame is not None and result is not None:
-        cv_show(annotated_frame, result, sys)
-        # quit_flag = cv_show(annotated_frame, result, sys)
-        # return quit_flag
-    
-    return False
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
 
 
 
-def program_mode_draw_record_chart(sys):
-    """
-    绘制记录图表模式
-    基于 YOLO 检测模式，把每一次检测到的目标中心点坐标记录到文件中。
-    在当前路径下新建 detection_records 文件夹，按时间戳新建 CSV 文件。
-    """
+# def program_mode_draw_record_chart(sys):
+#     """
+#     绘制记录图表模式
+#     基于 YOLO 检测模式，把每一次检测到的目标中心点坐标记录到文件中。
+#     在当前路径下新建 detection_records 文件夹，按时间戳新建 CSV 文件。
+#     """
     
 def program_mode_draw_record_chart(sys):
     annotated_frame = None
