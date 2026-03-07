@@ -54,11 +54,9 @@ def cv_show(frame, results, sys):
     return False
 
 
-def program_mode_yolodetection_no_show(sys , activate_buzzer=True): #添加了蜂鸣器控制参数，默认开启蜂鸣器
-    """
-    YOLO检测模式（不显示图像,不使用智能控制）
-    修复版本：正确的模式切换逻辑
-    """
+def program_mode_yolo_detection(sys , activate_buzzer=True): #添加了蜂鸣器控制参数，默认开启蜂鸣器
+    #YOLO检测模式，基础模式，不显示图像。
+    
     annotated_frame = None
     result = None
             
@@ -115,7 +113,7 @@ def program_mode_yolodetection_show(sys):
     """
     YOLO检测模式（显示图像）
     """
-    annotated_frame, result = program_mode_yolodetection_no_show(sys)
+    annotated_frame, result = program_mode_yolo_detection(sys)
     
     # 添加空值检查，防止None被传入cv_show
     if annotated_frame is not None and result is not None:
@@ -126,7 +124,7 @@ def program_mode_yolodetection_show(sys):
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
 
-    program_mode_yolodetection_no_show(sys , activate_buzzer=False)
+    program_mode_yolo_detection(sys , activate_buzzer=False)
     
     
 def program_mode_yolodetection_show_no_buzzer(sys):   
@@ -222,7 +220,7 @@ def running_code(sys):
     current_program_mode = sys.get_program_mode()  # 把当前程序运行模式赋值给current_program_mode 
     
     if current_program_mode == "yolo detection\nno image":
-        program_mode_yolodetection_no_show(sys)
+        program_mode_yolo_detection(sys)
     elif current_program_mode == "yolo detection\nvc show":
         program_mode_yolodetection_show(sys)
     elif current_program_mode == "yolo detection\nno buzzer":
