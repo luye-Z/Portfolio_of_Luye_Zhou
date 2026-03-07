@@ -69,7 +69,7 @@ def program_mode_yolo_detection(sys , activate_buzzer=True): #添加了蜂鸣器
 
     # 检查是否检测到目标
     #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
-    if sys.detector.get_if_target_detected() and sys.get_program_mode() == "yolo detection\nno image":
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
         
 
         # 调用舵机控制器跟踪目标
@@ -77,9 +77,7 @@ def program_mode_yolo_detection(sys , activate_buzzer=True): #添加了蜂鸣器
         # 调用 PID 控制器计算角度
         sys.pid_controller.pid_control_calculate(
             obj_target_center_x, 
-            obj_target_center_y, 
-            sys.detector.SCREEN_WIDTH, 
-            sys.detector.SCREEN_HEIGHT
+            obj_target_center_y
         )
          # 获取 PID 控制器输出
         pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
@@ -132,8 +130,9 @@ def program_mode_yolodetection_show_no_buzzer(sys):
     
     # 添加空值检查，防止None被传入cv_show
     if annotated_frame is not None and result is not None:
-        quit_flag = cv_show(annotated_frame, result, sys)
-        return quit_flag
+        cv_show(annotated_frame, result, sys)
+        # quit_flag = cv_show(annotated_frame, result, sys)
+        # return quit_flag
     
     return False
 
@@ -193,7 +192,7 @@ def program_mode_draw_record_chart(sys):
                 writer.writerow([current_time, f"{x:.2f}", f"{y:.2f}"])
 
             # 舵机跟踪
-            sys.pid_controller.pid_control_calculate(x, y, sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
+            sys.pid_controller.pid_control_calculate(x, y)
             
             # --- 核心：每帧更新后重新绘制并保存图片 ---
             # 为了性能，建议你可以根据需要设置触发频率，比如每 10 帧更新一次图表
@@ -206,7 +205,7 @@ def program_mode_draw_record_chart(sys):
         sys.detector.reverse_yolo_detect_turn()
         if sys.detector.get_if_target_detected():
             p_x, p_y = sys.detector.calculate_smart_control_target_center()
-            sys.pid_controller.pid_control_calculate(p_x, p_y, sys.detector.SCREEN_WIDTH, sys.detector.SCREEN_HEIGHT)
+            sys.pid_controller.pid_control_calculate(p_x, p_y)
 
     return annotated_frame, result
     

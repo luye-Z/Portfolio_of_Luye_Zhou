@@ -19,8 +19,11 @@ class PIDController:
         #像素角分辨率 (Pixel Angular Resolution)
         #77°/864像素(screen_width)
         self.DEG_PER_PIX = 77.0 / 864  # 根据你的 SCREEN_WIDTH 自动适配
+        
+        self.SCREEN_WIDTH = 864
+        self.SCREEN_HEIGHT = 640
                 
-    def pid_control_calculate(self, target_x, target_y, screen_w, screen_h):
+    def pid_control_calculate(self, target_x, target_y):
 
         """
 
@@ -30,8 +33,8 @@ class PIDController:
 
         # 1. 计算误差 (Error)
 
-        error_x = target_x - (screen_w / 2)
-        error_y = target_y - (screen_h / 2)
+        error_x = target_x - (self.SCREEN_WIDTH / 2)
+        error_y = target_y - (self.SCREEN_HEIGHT / 2)
         
         # 计算误差变化率（微分项）
         error_diff_x = error_x - self.last_error_x
