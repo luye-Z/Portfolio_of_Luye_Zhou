@@ -56,89 +56,6 @@ def cv_show(frame, results, sys):
 
 def program_mode_yolodetection_no_show(sys , activate_buzzer=True): #添加了蜂鸣器控制参数，默认开启蜂鸣器
     """
-    YOLO检测模式（不显示图像）
-    修复版本：正确的模式切换逻辑
-    """
-    annotated_frame = None #初始化 annotated_frame 为 None
-    result = None  #初始化 result 为 None
-            
-    if sys.detector.get_yolo_detect_turn():
-                # YOLO 检测模式：调用 detect_frame
-                print("YOLO 检测模式")
-                
-                # 调用 YOLO 检测（只调用一次！）
-                result, annotated_frame = sys.detector.detect_frame()
-                
-                # 更新智能控制参数
-                #算法来自于smart_control_algorithm 模块 ， 数据来源于yolo_predict 模块
-                sys.smart_control_algorithm.update_smart_control_params(sys.detector.get_target_center_x(),sys.detector.get_target_center_y())
-                
-                # 翻转模式选择标志位
-                sys.detector.reverse_yolo_detect_turn()
-                
-                # 检查是否检测到目标
-                #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
-                if sys.detector.get_if_target_detected() and sys.get_program_mode() == "yolo detection\nno image":
-                    
-
-                    # 调用舵机控制器跟踪目标
-                    obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-                    # 调用 PID 控制器计算角度
-                    sys.pid_controller.pid_control_calculate(
-                        obj_target_center_x, 
-                        obj_target_center_y, 
-                        sys.detector.SCREEN_WIDTH, 
-                        sys.detector.SCREEN_HEIGHT
-                    )
-                     # 获取 PID 控制器输出
-                    pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
-                    #控制舵机运动
-                    sys.servo_controller.set_pan_angle(pan_controller_output)
-                    sys.servo_controller.set_tilt_angle(tilt_controller_output)
-                    
-                    
-
-                    #activate indicator led and buzzer
-                    sys.rgb_led.set_color_name("red")
-                    
-                    if activate_buzzer: #检查蜂鸣器控制参数
-                        sys.buzzer.start_alarm()
-                    
-                    
-                    current_d = sys.laser_sensor.distance
-                    print(f"激光测距距离: {current_d} mm")
-                    obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-                    print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
-                else:
-                    print("未检测到目标")
-                    
-                    # 停止蜂鸣器报警
-                    if activate_buzzer:#检查蜂鸣器控制参数
-                        sys.buzzer.stop_alarm()
-                        
-                    sys.rgb_led.set_color_name("green")
-                
-    else:
-                # 智能控制模式：不调用 detect_frame，直接使用预估坐标
-                print("智能控制模式")
-                sys.detector.reverse_yolo_detect_turn()
-                
-                if sys.detector.get_if_target_detected():
-                    # 获取预估坐标
-                    smart_predicted_target_center_xy_tuple = sys.smart_control_algorithm.calculate_smart_control_target_center()
-                    
-                    # 调用舵机控制器跟踪目标
-                    sys.pid_controller.pid_control_calculate(
-                        smart_predicted_target_center_xy_tuple[0], 
-                        smart_predicted_target_center_xy_tuple[1], 
-                        sys.detector.SCREEN_WIDTH, 
-                        sys.detector.SCREEN_HEIGHT
-                    )
-    
-    return annotated_frame, result
-
-def program_mode_yolodetection_no_smart_control(sys):
-    """
     YOLO检测模式（不显示图像,不使用智能控制）
     修复版本：正确的模式切换逻辑
     """
@@ -154,7 +71,7 @@ def program_mode_yolodetection_no_smart_control(sys):
 
     # 检查是否检测到目标
     #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
-    if sys.detector.get_if_target_detected() and sys.get_program_mode() == "yolo detection\nno smart control":
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() == "yolo detection\nno image":
         
 
         # 调用舵机控制器跟踪目标
@@ -191,6 +108,8 @@ def program_mode_yolodetection_no_smart_control(sys):
 
     
     return annotated_frame, result
+
+
 
 def program_mode_yolodetection_show(sys):
     """
@@ -312,8 +231,7 @@ def running_code(sys):
         program_mode_yolodetection_no_show_no_buzzer(sys)
     elif current_program_mode =="draw_record_chart":
         program_mode_draw_record_chart(sys)
-    elif current_program_mode =="yolo detection\nno smart control":
-        program_mode_yolodetection_no_smart_control(sys)
+
         
     
         
