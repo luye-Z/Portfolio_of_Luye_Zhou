@@ -46,12 +46,12 @@ def cv_show(frame, results, sys):
         # 显示带框图像
         cv2.imshow("YOLO Detection", annotated_frame)
     
-    # 3. 退出逻辑：按 'q' 键退出
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        return True
+    # # 3. 退出逻辑：按 'q' 键退出
+    # key = cv2.waitKey(1) & 0xFF
+    # if key == ord('q'):
+    #     return True
     
-    return False
+    # return False
 
 
 def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
@@ -88,7 +88,9 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
 
         #activate indicator led and buzzer
         sys.rgb_led.set_color_name("red")
-        sys.buzzer.start_alarm()
+        
+        if activate_buzzer:
+            sys.buzzer.start_alarm()
         
         
         current_d = sys.laser_sensor.distance
@@ -114,7 +116,6 @@ def program_mode_yolodetection_show(sys):
 def program_mode_yolodetection_no_show_no_buzzer(sys):
 
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=False)
-    
     
 def program_mode_yolodetection_show_no_buzzer(sys):   
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
