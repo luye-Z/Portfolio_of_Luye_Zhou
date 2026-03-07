@@ -53,6 +53,22 @@ def cv_show(frame, results, sys):
     
     # return False
 
+def update_servo_tracking(sys):
+    #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
+    # 调用舵机控制器跟踪目标
+        #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
+        
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        # 调用 PID 控制器计算角度
+        sys.pid_controller.pid_control_calculate(
+            obj_target_center_x, 
+            obj_target_center_y
+        )
+         # 获取 PID 控制器输出
+        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+        #控制舵机运动
+        sys.servo_controller.set_pan_angle(pan_controller_output)
+        sys.servo_controller.set_tilt_angle(tilt_controller_output)
 
 def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
@@ -71,19 +87,8 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
     #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
     if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
         
-
-        # 调用舵机控制器跟踪目标
-        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        # 调用 PID 控制器计算角度
-        sys.pid_controller.pid_control_calculate(
-            obj_target_center_x, 
-            obj_target_center_y
-        )
-         # 获取 PID 控制器输出
-        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
-        #控制舵机运动
-        sys.servo_controller.set_pan_angle(pan_controller_output)
-        sys.servo_controller.set_tilt_angle(tilt_controller_output)
+        # 调用工具函数，更新舵机跟踪角度
+        update_servo_tracking(sys)
         
 
         #activate indicator led and buzzer
