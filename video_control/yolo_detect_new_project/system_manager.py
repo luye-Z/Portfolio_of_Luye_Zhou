@@ -1,14 +1,14 @@
 import cv2
 from yolo_predict import YOLODetector
-from buzzer_driver import BuzzerController
-from vl53l0x_drive_threat import VL53L0X_Threaded
-from oled_driver import OLEDDriver
-from pwm_servos_control import ServoController
-from rgb_led_control import LEDController
-from mpu6050_driver import MPU6050driver
-from button_driver import ButtonDriver
-from smart_control_algorithm import SmartControlAlgorithm
-from PID_controller import PIDController
+from core_hardware_driver.buzzer_driver import BuzzerController
+from core_hardware_driver.vl53l0x_drive_threat import VL53L0X_Threaded
+from core_hardware_driver.oled_driver import OLEDDriver
+from core_hardware_driver.pwm_servos_control import ServoController
+from core_hardware_driver.rgb_led_control import LEDController
+from core_hardware_driver.mpu6050_driver import MPU6050driver
+from core_hardware_driver.button_driver import ButtonDriver
+from core_algorithm.smart_control_algorithm import SmartControlAlgorithm
+from core_algorithm.PID_controller import PIDController
 import time
 import threading
 from queue import Queue
