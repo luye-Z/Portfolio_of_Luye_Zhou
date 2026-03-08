@@ -30,7 +30,7 @@ def get_next_filename(base_name="tracking_analysis", ext=".png"):
 # --- 2. 数据准备 ---
 SCREEN_WIDTH = 432   # 864 / 2
 SCREEN_HEIGHT = 320  # 640 / 2
-file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260308_130847.csv"
+file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260308_160343.csv"
 
 try:
     # 读取 CSV，并根据你的记录顺序手动指定列名
