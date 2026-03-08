@@ -150,9 +150,7 @@ def program_mode_yolodetection_show_no_buzzer(sys):
 #     在当前路径下新建 detection_records 文件夹，按时间戳新建 CSV 文件。
 #     """
     
-import os
-import csv
-from datetime import datetime
+
 
 def program_mode_draw_record_chart(sys):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
