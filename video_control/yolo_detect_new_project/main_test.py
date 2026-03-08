@@ -135,16 +135,9 @@ def program_mode_yolodetection_show_no_buzzer(sys):
 #     """
     
 def program_mode_draw_record_chart(sys):
-    annotated_frame = None
-    result = None
-
-    # 1. ========== 初始化记录文件 (CSV) ==========
+    # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
-        # --- 核心修改：相对路径定位 ---
-        # 获取当前脚本 (main_test.py) 所在的绝对目录
         current_script_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # 定位到 detection_records_analyse/detection_records
         record_dir = os.path.join(
             current_script_dir, 
             "detection_records_analyse", 
@@ -152,53 +145,44 @@ def program_mode_draw_record_chart(sys):
         )
         
         # 确保目录存在
-        os.makedirs(record_dir, exist_ok=True)
-        
-        # 记录本次运行的时间戳
-        sys._run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        sys._record_file_path = os.path.join(record_dir, f"record_{sys._run_timestamp}.csv")
-        
-        # 创建文件并写入表头
-        with open(sys._record_file_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["timestamp", "center_x", "center_y"])
-        print(f"[SYSTEM] 相对路径记录已启动: {sys._record_file_path}")
-
-    # 2. ========== YOLO 检测逻辑 ==========
-    if sys.detector.get_yolo_detect_turn():
-        result, annotated_frame = sys.detector.detect_frame()
-        sys.detector.update_smart_control_params()
-        sys.detector.reverse_yolo_detect_turn()
-
-        if sys.detector.get_if_target_detected():
-            sys.rgb_led.set_color_name("red")
-            x, y = sys.detector.get_target_center()
-
-            # 写入 CSV
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            with open(sys._record_file_path, "a", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow([current_time, f"{x:.2f}", f"{y:.2f}"])
-
-            # 舵机跟踪
-            sys.pid_controller.pid_control_calculate(x, y)
+        if not os.path.exists(record_dir):
+            os.makedirs(record_dir)
             
-            # --- 核心：每帧更新后重新绘制并保存图片 ---
-            # 为了性能，建议你可以根据需要设置触发频率，比如每 10 帧更新一次图表
-            # 或者在程序结束时调用。这里演示实时保存：
-        else:
-            sys.rgb_led.set_color_name("green")
+        # 设置文件路径（例如以 data_record.csv 命名）
+        sys._record_file_path = os.path.join(record_dir, "data_record.csv")
+        
+        # 如果是新文件，写入表头
+        if not os.path.exists(sys._record_file_path):
+            with open(sys._record_file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
 
-    else:
-        # 智能控制模式
-        sys.detector.reverse_yolo_detect_turn()
-        if sys.detector.get_if_target_detected():
-            p_x, p_y = sys.detector.calculate_smart_control_target_center()
-            sys.pid_controller.pid_control_calculate(p_x, p_y)
+    # 2. ========== 执行 YOLO 检测与控制 ==========
+    # 假设该函数执行后，sys 内的相关对象会更新状态
+    program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False)
 
-    return annotated_frame, result
-    
-     
+    # 3. ========== 获取数据并立即写入文件 ==========
+    try:
+        # 获取目标中心坐标
+        target_center = sys.detector.get_target_center()  # 假设返回 (x, y)
+        target_x, target_y = target_center if target_center else (0, 0)
+
+        # 获取 PID 输出和误差
+        # 注意：这里假设你的 pid_controller 存储了最近一次的误差和输出
+        # 如果 get_PID_controller_output() 返回的是 (out_x, out_y)
+        pid_out_x, pid_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        # 假设误差可以从 pid 实例中直接获取，或者通过计算得到
+        error_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0
+        error_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0
+
+        # 以追加模式 ('a') 打开文件，确保立即写入
+        with open(sys._record_file_path, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([target_x, target_y, error_x, error_y, pid_out_x, pid_out_y])
+            
+    except Exception as e:
+        print(f"写入记录失败: {e}")
 def running_code(sys):
     """
     主运行函数：处理视频流、YOLO检测、舵机控制
