@@ -27,7 +27,12 @@ class PIDController:
         self.SCREEN_HEIGHT = 640
         
 
-                
+    def pid_parameters_update(self, kp_pan, kp_tilt, kd_pan, kd_tilt):
+        self.kp_pan = kp_pan
+        self.kp_tilt = kp_tilt
+        self.kd_pan = kd_pan
+        self.kd_tilt = kd_tilt
+            
     def pid_control_calculate(self, target_x, target_y):
 
         """

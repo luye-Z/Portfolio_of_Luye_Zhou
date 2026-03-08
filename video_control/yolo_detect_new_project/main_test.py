@@ -10,57 +10,72 @@ from datetime import datetime
 #main函数测试版 ，主要功能，是创建一个runing_code 函数 ，去实现各种功能逻辑的调用
 def cv_show(frame, results, sys):
     """
-    极简显示函数：只画框和原始视频
-    :param frame: 原始图像帧
-    :param results: YOLO 推理结果
-    :return: 是否按下退出键 (True/False)
+    极简显示函数：针对树莓派深度优化版
     """
-    # 直接在原始帧的副本上绘制，保持分辨率一致
-    annotated_frame = frame.copy()
+    # [核心优化 1]：零拷贝 (Zero-copy) 原则
+    # 移除 frame.copy()，直接在原图上绘制。如果其他环节不需要纯净帧，这是最省内存带宽的做法。
+    annotated_frame = frame 
     
     # 1. 确保结果不为空
     if len(results) == 0 or len(results[0].boxes) == 0:
-        # 没有检测到目标，显示原图
         cv2.imshow("YOLO Detection", annotated_frame)
     else:
+        # [核心优化 2]：将张量一次性推入 CPU 并转为 NumPy 数组
+        # 避免在 for 循环中反复调用 .tolist() 和 .item()，大幅减少 Python 解释器与底层 C++ 的通信开销
+        boxes = results[0].boxes
+        xyxy_array = boxes.xyxy.cpu().numpy()
+        conf_array = boxes.conf.cpu().numpy()
+        cls_array = boxes.cls.cpu().numpy()
+        
+        # [核心优化 3]：将常量计算提至循环外，避免在每一次目标检测时重复计算浮点乘法
+        max_w = sys.detector.SCREEN_WIDTH * 0.55
+        max_h = sys.detector.SCREEN_HEIGHT * 0.55
+        
         # 2. 绘制检测框
-        for box in results[0].boxes:
-            # 获取坐标
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            conf = box.conf[0].item()
-            cls = int(box.cls[0].item())
+        for i in range(len(xyxy_array)):
+            # 直接从 NumPy 数组中解包，速度极快
+            x1, y1, x2, y2 = xyxy_array[i]
+            conf = conf_array[i]
+            cls = int(cls_array[i])
             
-            # 之前的过滤逻辑：如果框太大（超过屏幕55%），通常是误检或离得太近，跳过不画
             w, h = x2 - x1, y2 - y1
-            if w >= (sys.detector.SCREEN_WIDTH * 0.55) or h >= (sys.detector.SCREEN_HEIGHT * 0.55):
+            
+            # 过滤逻辑
+            if w >= max_w or h >= max_h:
                 continue
             
-            # 画矩形框 (绿色，线条宽度为2)
-            cv2.rectangle(annotated_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            # 统一转为整型坐标，供 OpenCV 绘制使用
+            ix1, iy1, ix2, iy2 = int(x1), int(y1), int(x2), int(y2)
             
-            # 简易标签 (类别ID + 置信度)
+            # 画矩形框
+            cv2.rectangle(annotated_frame, (ix1, iy1), (ix2, iy2), (0, 255, 0), 2)
+            
+            # 简易标签
             label = f"ID:{cls} {conf:.2f}"
-            cv2.putText(annotated_frame, label, (int(x1), int(y1) - 10),
+            cv2.putText(annotated_frame, label, (ix1, iy1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
         # 显示带框图像
         cv2.imshow("YOLO Detection", annotated_frame)
     
     # 3. 退出逻辑：按 'q' 键退出
-    #这一段不能删，很重要
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
         return True
     
     return False
 
-def update_servo_tracking(sys):
+def update_servo_tracking(sys, kp_pan=0.15, kp_tilt=0.15, kd_pan=0.07, kd_tilt=0.07):
     #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
     # 调用舵机控制器跟踪目标
         #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
         
         obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
         # 调用 PID 控制器计算角度
+        
+        #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
+        sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
+        
         sys.pid_controller.pid_control_calculate(
             obj_target_center_x, 
             obj_target_center_y
