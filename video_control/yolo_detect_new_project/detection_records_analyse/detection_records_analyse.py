@@ -39,7 +39,7 @@ def get_next_filename(base_name="tracking_analysis", ext=".png"):
 # --- 2. 数据准备与计算 ---
 SCREEN_WIDTH = 864 / 2
 SCREEN_HEIGHT = 640 / 2
-file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records/record_20260304_151409.csv"
+file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records/data_record_20260308_114245.csv"
 
 try:
     data = pd.read_csv(file_path)

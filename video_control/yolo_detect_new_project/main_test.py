@@ -134,6 +134,10 @@ def program_mode_yolodetection_show_no_buzzer(sys):
 #     在当前路径下新建 detection_records 文件夹，按时间戳新建 CSV 文件。
 #     """
     
+import os
+import csv
+from datetime import datetime
+
 def program_mode_draw_record_chart(sys):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
@@ -144,45 +148,51 @@ def program_mode_draw_record_chart(sys):
             "detection_records"
         )
         
-        # 确保目录存在
         if not os.path.exists(record_dir):
             os.makedirs(record_dir)
             
-        # 设置文件路径（例如以 data_record.csv 命名）
-        sys._record_file_path = os.path.join(record_dir, "data_record.csv")
+        # 生成带日期和时间的文件名
+        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"data_record_{file_timestamp}.csv"
+        sys._record_file_path = os.path.join(record_dir, filename)
         
-        # 如果是新文件，写入表头
-        if not os.path.exists(sys._record_file_path):
-            with open(sys._record_file_path, 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
+        # 写入表头，增加 'timestamp' 列
+        with open(sys._record_file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
 
     # 2. ========== 执行 YOLO 检测与控制 ==========
-    # 假设该函数执行后，sys 内的相关对象会更新状态
     program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False)
 
-    # 3. ========== 获取数据并立即写入文件 ==========
+    # 3. ========== 获取数据并写入 ==========
     try:
-        # 获取目标中心坐标
-        target_center = sys.detector.get_target_center()  # 假设返回 (x, y)
-        target_x, target_y = target_center if target_center else (0, 0)
+        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
+        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
 
-        # 获取 PID 输出和误差
-        # 注意：这里假设你的 pid_controller 存储了最近一次的误差和输出
-        # 如果 get_PID_controller_output() 返回的是 (out_x, out_y)
-        pid_out_x, pid_out_y = sys.pid_controller.get_PID_controller_output()
+        # 获取原始数值
+        target_center = sys.detector.get_target_center()
+        t_x, t_y = target_center if target_center else (0.0, 0.0)
         
-        # 假设误差可以从 pid 实例中直接获取，或者通过计算得到
-        error_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0
-        error_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0
+        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
+        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
 
-        # 以追加模式 ('a') 打开文件，确保立即写入
+        # 格式化数值精度
+        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
+        formatted_values = [f"{val:.3f}" for val in values]
+
+        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
+        final_row = [now_time] + formatted_values
+
         with open(sys._record_file_path, 'a', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow([target_x, target_y, error_x, error_y, pid_out_x, pid_out_y])
+            writer.writerow(final_row)
             
     except Exception as e:
         print(f"写入记录失败: {e}")
+        
+        
 def running_code(sys):
     """
     主运行函数：处理视频流、YOLO检测、舵机控制
