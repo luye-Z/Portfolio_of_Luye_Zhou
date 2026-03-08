@@ -46,12 +46,13 @@ def cv_show(frame, results, sys):
         # 显示带框图像
         cv2.imshow("YOLO Detection", annotated_frame)
     
-    # # 3. 退出逻辑：按 'q' 键退出
-    # key = cv2.waitKey(1) & 0xFF
-    # if key == ord('q'):
-    #     return True
+    # 3. 退出逻辑：按 'q' 键退出
+    #这一段不能删，很重要
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
+        return True
     
-    # return False
+    return False
 
 def update_servo_tracking(sys):
     #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
@@ -116,7 +117,7 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
 
 
 def program_mode_yolodetection_show(sys):
-    program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=True)   
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
 
