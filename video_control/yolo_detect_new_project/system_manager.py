@@ -223,7 +223,9 @@ class SystemManager:
             self.rgb_led.off() # 关闭RGB灯
             self.buzzer.stop_alarm() # 关闭蜂鸣器
             self.servo_controller.reset() # 重置舵机角度
-    
+
+            self.pid_controller.reset_control_parameters() # 重置PID控制器参数
+            
     def action_double_click(self):
         """双击处理"""
         print("【双击】->")

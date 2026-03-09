@@ -10,8 +10,7 @@ class PIDController:
         # 状态记录
 
         self.current_pan = 0.0
-        self.current_tilt = 90.0  # 初始向上看
-        
+        self.current_tilt = 90.0  # 初始位置
         # PD 控制需要上一次误差
         self.last_error_x = 0.0
         self.last_error_y = 0.0
@@ -32,6 +31,17 @@ class PIDController:
         self.kp_tilt = kp_tilt
         self.kd_pan = kd_pan
         self.kd_tilt = kd_tilt
+        
+    def reset_control_parameters(self):
+        self.current_pan = 0.0
+        self.current_tilt = 90.0  # 初始位置
+        
+        # PD 控制需要上一次误差
+        self.last_error_x = 0.0
+        self.last_error_y = 0.0
+        
+        self.error_x = 0.0
+        self.error_y = 0.0
             
     def pid_control_calculate(self, target_x, target_y):
 
