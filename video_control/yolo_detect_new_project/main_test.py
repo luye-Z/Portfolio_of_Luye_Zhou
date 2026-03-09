@@ -132,7 +132,7 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
 
 
 def program_mode_yolodetection_show(sys):
-    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
+    program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=True)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
 
