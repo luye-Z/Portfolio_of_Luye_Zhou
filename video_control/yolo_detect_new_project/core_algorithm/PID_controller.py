@@ -124,7 +124,7 @@ class PIDController:
             self.feedforward_target_x = target_x
             self.feedforward_target_y = target_y
             
-            if self.feedforward_last_target_x is not None:
+            if self.feedforward_last_target_x is not None and abs(self.feedforward_target_x - self.feedforward_last_target_x) > self.dead_zone:
                 feedforward_control_pan = self.DEG_PER_PIX*self.Kff_pan*(self.feedforward_target_x - self.feedforward_last_target_x)   
                 self.current_pan -= feedforward_control_pan # 镜像调整
 
@@ -132,7 +132,7 @@ class PIDController:
 
             # 3. 垂直追踪 (Tilt)
 
-            if self.feedforward_last_target_y is not None:
+            if self.feedforward_last_target_y is not None and abs(self.feedforward_target_y - self.feedforward_last_target_y) > self.dead_zone:
                 feedforward_control_tilt = self.DEG_PER_PIX*self.Kff_tilt*(self.feedforward_target_y - self.feedforward_last_target_y)   
                 self.current_tilt += feedforward_control_tilt
 

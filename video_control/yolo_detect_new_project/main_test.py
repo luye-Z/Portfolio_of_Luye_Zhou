@@ -85,7 +85,29 @@ def update_servo_tracking(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0
         #控制舵机运动
         sys.servo_controller.set_pan_angle(pan_controller_output)
         sys.servo_controller.set_tilt_angle(tilt_controller_output)
-
+        
+def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.05):    
+    #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
+    # 调用舵机控制器跟踪目标
+        #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
+        
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        # 调用 PID 控制器计算角度
+        
+        #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
+        sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
+        sys.pid_controller.pid_feedforward_parameters_update(Kff_pan, Kff_tilt)
+        
+        
+        sys.pid_controller.pid_control_calculate(obj_target_center_x, obj_target_center_y)
+        sys.pid_controller.feed_forward_control_calculate(obj_target_center_x, obj_target_center_y)
+         
+         # 获取 PID 控制器输出
+        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+        #控制舵机运动
+        sys.servo_controller.set_pan_angle(pan_controller_output)
+        sys.servo_controller.set_tilt_angle(tilt_controller_output)
+        
 def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     
@@ -205,6 +227,51 @@ def program_mode_draw_record_chart(sys):
             
     except Exception as e:
         print(f"写入记录失败: {e}")
+
+def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_screen_show=False):
+    #YOLO检测模式，基础模式，不显示图像。
+    
+    annotated_frame = None
+    result = None
+            
+
+    # YOLO 检测模式：调用 detect_frame
+    print("YOLO 检测模式")
+    
+    # 调用 YOLO 检测（只调用一次！）
+    result, annotated_frame = sys.detector.detect_frame()
+
+    # 检查是否检测到目标
+    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
+        
+        # 调用工具函数，更新舵机跟踪角度
+        update_servo_tracking(sys)
+        
+
+        #activate indicator led and buzzer
+        sys.rgb_led.set_color_name("red")
+        
+        if activate_buzzer:
+            sys.buzzer.start_alarm()
+        
+        
+        current_d = sys.laser_sensor.distance
+        print(f"激光测距距离: {current_d} mm")
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+    else:
+        print("未检测到目标")
+        # 停止蜂鸣器报警
+        sys.buzzer.stop_alarm()
+        sys.rgb_led.set_color_name("green")
+    
+
+    
+    if annotated_frame is not None and result is not None and activate_screen_show:
+        cv_show(annotated_frame, result, sys)
+
+
         
         
 def running_code(sys):
@@ -225,6 +292,10 @@ def running_code(sys):
         program_mode_yolodetection_no_show_no_buzzer(sys)
     elif current_program_mode =="draw_record_chart":
         program_mode_draw_record_chart(sys)
+    elif current_program_mode == "feedforward_control\ntest":
+        program_mode_feedforward_control_test(sys)
+
+
 
         
     
