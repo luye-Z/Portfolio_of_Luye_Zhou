@@ -86,7 +86,7 @@ def update_servo_tracking(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0
         sys.servo_controller.set_pan_angle(pan_controller_output)
         sys.servo_controller.set_tilt_angle(tilt_controller_output)
         
-def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.05):    
+def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
     #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
     # 调用舵机控制器跟踪目标
         #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
