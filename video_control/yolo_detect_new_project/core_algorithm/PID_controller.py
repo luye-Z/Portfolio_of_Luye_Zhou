@@ -25,12 +25,30 @@ class PIDController:
         self.SCREEN_WIDTH = 864
         self.SCREEN_HEIGHT = 640
         
+        #feed forward term
+        self.feedforward_target_x = None
+        self.feedforward_target_y = None
+        
+        self.feedforward_last_target_x = None
+        self.feedforward_last_target_y = None
+        
+        
+        self.Kff_pan = 0.0
+        self.Kff_tilt = 0.0
+        
+        
+        
+        
 
     def pid_parameters_update(self, kp_pan, kp_tilt, kd_pan, kd_tilt):
         self.kp_pan = kp_pan
         self.kp_tilt = kp_tilt
         self.kd_pan = kd_pan
         self.kd_tilt = kd_tilt
+        
+    def pid_feedforward_parameters_update(self, Kff_pan, Kff_tilt):
+        self.Kff_pan = Kff_pan
+        self.Kff_tilt = Kff_tilt
         
     def reset_control_parameters(self):
         self.current_pan = 0.0
@@ -42,7 +60,18 @@ class PIDController:
         
         self.error_x = 0.0
         self.error_y = 0.0
-            
+        
+
+        
+    # def feedback_control_calculate(self, target_x, target_y):
+    #     """
+    #     反馈控制计算
+    #     根据目标位置和当前位置计算误差
+    #     """
+    #     self.error_x = target_x - (self.SCREEN_WIDTH / 2)
+    #     self.error_y = target_y - (self.SCREEN_HEIGHT / 2)
+        
+        
     def pid_control_calculate(self, target_x, target_y):
 
         """
@@ -87,8 +116,35 @@ class PIDController:
         # 4. 更新上一次误差
         self.last_error_x = self.error_x
         self.last_error_y = self.error_y
+        
+        
+    def feed_forward_control_calculate(self, target_x, target_y):
+        
+        
+            self.feedforward_target_x = target_x
+            self.feedforward_target_y = target_y
+            
+            if self.feedforward_last_target_x is not None:
+                feedforward_control_pan = self.DEG_PER_PIX*self.Kff_pan*(self.feedforward_target_x - self.feedforward_last_target_x)   
+                self.current_pan -= feedforward_control_pan # 镜像调整
 
+                # self._set_angle(self.servo_pan, self.current_pan)
+
+            # 3. 垂直追踪 (Tilt)
+
+            if self.feedforward_last_target_y is not None:
+                feedforward_control_tilt = self.DEG_PER_PIX*self.Kff_tilt*(self.feedforward_target_y - self.feedforward_last_target_y)   
+                self.current_tilt += feedforward_control_tilt
+
+            # feedforward 控制需要上一次目标位置 ,参数更新
+            self.feedforward_last_target_x = self.feedforward_target_x
+            self.feedforward_last_target_y = self.feedforward_target_y
+
+        
+        
+        
     def get_PID_controller_output(self):
         # 返回当前的 pan 和 tilt 角度,直接给这个角度输入给舵机
+        #这里返回的角度可能只经过PID计算，或者经过PID和feedforward计算
         return self.current_pan, self.current_tilt
     
