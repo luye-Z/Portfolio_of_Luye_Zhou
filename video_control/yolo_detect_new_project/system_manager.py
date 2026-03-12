@@ -43,7 +43,8 @@ class SystemManager:
                                      "yolo detection\nno buzzer",
                                      "yolo detection\nno image no buzzer",
                                      "draw_record_chart",
-                                     "feedforward_control\ntest")
+                                     "feedforward_control\ntest",
+                                     "draw_record_chart\nfeedback_control")
         self.menu_select_idx = 1
         self.current_program_mode = self.program_mode_storage[0]
         
@@ -180,6 +181,8 @@ class SystemManager:
             display_text = "RUNNING:\nDraw charts"   
         elif self.current_program_mode == self.program_mode_storage[6]:
             display_text = "RUNNING:\nFeedforward Control Test"
+        elif self.current_program_mode == self.program_mode_storage[7]:
+            display_text = "RUNNING:\nFeedback Control Test"
         
         else:
             return  # 异常模式，不更新

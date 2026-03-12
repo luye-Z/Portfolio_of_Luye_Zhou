@@ -272,6 +272,60 @@ def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_sc
         cv_show(annotated_frame, result, sys)
 
 
+
+def program_mode_feedforward_draw_record_chart(sys):
+    # 1. ========== 初始化记录文件路径 (CSV) ==========
+    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
+        record_dir = os.path.join(
+            current_script_dir, 
+            "detection_records_analyse", 
+            "detection_records"
+        )
+        
+        if not os.path.exists(record_dir):
+            os.makedirs(record_dir)
+            
+        # 生成带日期和时间的文件名
+        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"data_record_{file_timestamp}.csv"
+        sys._record_file_path = os.path.join(record_dir, filename)
+        
+        # 写入表头，增加 'timestamp' 列
+        with open(sys._record_file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
+
+    # 2. ========== 执行 YOLO 检测与控制 ==========
+    program_mode_feedforward_control_test(sys, activate_buzzer=False, activate_screen_show=False)
+
+    # 3. ========== 获取数据并写入 ==========
+    try:
+        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
+        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
+
+        # 获取原始数值
+        target_center = sys.detector.get_target_center()
+        t_x, t_y = target_center if target_center else (0.0, 0.0)
+        
+        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
+        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
+
+        # 格式化数值精度
+        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
+        formatted_values = [f"{val:.3f}" for val in values]
+
+        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
+        final_row = [now_time] + formatted_values
+
+        with open(sys._record_file_path, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(final_row)
+            
+    except Exception as e:
+        print(f"写入记录失败: {e}")
         
         
 def running_code(sys):
@@ -294,6 +348,8 @@ def running_code(sys):
         program_mode_draw_record_chart(sys)
     elif current_program_mode == "feedforward_control\ntest":
         program_mode_feedforward_control_test(sys)
+    elif current_program_mode == "draw_record_chart\nfeedback_control":
+        program_mode_feedforward_draw_record_chart(sys)
 
 
 
