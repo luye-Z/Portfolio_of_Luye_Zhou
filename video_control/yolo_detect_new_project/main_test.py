@@ -74,6 +74,9 @@ def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35,
         # 调用 PID 控制器计算角度
         
         #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
+        if obj_target_center_x is None or obj_target_center_y is None:
+            return
+        
         sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
         
         sys.pid_controller.pid_control_calculate(
