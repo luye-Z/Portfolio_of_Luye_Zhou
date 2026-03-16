@@ -65,7 +65,7 @@ def cv_show(frame, results, sys):
     
     return False
 
-def update_servo_tracking(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12):
+def pid_control_servos(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12):
     #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
     # 调用舵机控制器跟踪目标
         #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
@@ -126,7 +126,7 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
     if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
         
         # 调用工具函数，更新舵机跟踪角度
-        update_servo_tracking(sys)
+        pid_control_servos(sys)
         
 
         #activate indicator led and buzzer
@@ -246,7 +246,7 @@ def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_sc
     if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
         
         # 调用工具函数，更新舵机跟踪角度
-        update_servo_tracking(sys)
+        pid_control_servos(sys)
         
 
         #activate indicator led and buzzer
