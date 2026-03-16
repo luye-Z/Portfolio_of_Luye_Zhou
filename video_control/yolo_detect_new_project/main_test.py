@@ -126,7 +126,8 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
     if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
         
         # 调用工具函数，更新舵机跟踪角度
-        pid_control_servos(sys)
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        pid_control_servos(sys,obj_target_center_x,obj_target_center_y)
         
 
         #activate indicator led and buzzer
@@ -150,8 +151,52 @@ def program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=
     
     if annotated_frame is not None and result is not None and activate_screen_show:
         cv_show(annotated_frame, result, sys)
+        
+def program_mode_kalman_test(sys , activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
 
+    #YOLO检测模式，基础模式，不显示图像。
+    
+    annotated_frame = None
+    result = None
+            
 
+    # YOLO 检测模式：调用 detect_frame
+    print("YOLO 检测模式")
+    
+    # 调用 YOLO 检测（只调用一次！）
+    result, annotated_frame = sys.detector.detect_frame()
+
+    # 检查是否检测到目标
+    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
+        
+        # 调用工具函数，更新舵机跟踪角度
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y = sys.kalman_tracker.update_and_output(obj_target_center_x, obj_target_center_y)
+        pid_control_servos(sys,obj_target_kalman_adjust_center_x,obj_target_kalman_adjust_center_y)
+        
+
+        #activate indicator led and buzzer
+        sys.rgb_led.set_color_name("red")
+        
+        if activate_buzzer:
+            sys.buzzer.start_alarm()
+        
+        
+        current_d = sys.laser_sensor.distance
+        print(f"激光测距距离: {current_d} mm")
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+    else:
+        print("未检测到目标")
+        # 停止蜂鸣器报警
+        sys.buzzer.stop_alarm()
+        sys.rgb_led.set_color_name("green")
+    
+
+    
+    if annotated_frame is not None and result is not None and activate_screen_show:
+        cv_show(annotated_frame, result, sys)
 
 def program_mode_yolodetection_show(sys):
     program_mode_yolo_detection(sys , activate_buzzer=True,activate_screen_show=True)   
@@ -228,6 +273,9 @@ def program_mode_draw_record_chart(sys):
     except Exception as e:
         print(f"写入记录失败: {e}")
 
+
+
+
 def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_screen_show=False):
     #YOLO检测模式，基础模式，不显示图像。
     
@@ -246,7 +294,8 @@ def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_sc
     if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
         
         # 调用工具函数，更新舵机跟踪角度
-        pid_control_servos(sys)
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        pid_control_servos(sys,obj_target_center_x,obj_target_center_y)
         
 
         #activate indicator led and buzzer
@@ -350,6 +399,8 @@ def running_code(sys):
         program_mode_feedforward_control_test(sys)
     elif current_program_mode == "draw_record_chart\nfeedback_control":
         program_mode_feedforward_draw_record_chart(sys)
+    elif current_program_mode == "Kalman_test":
+        program_mode_kalman_test(sys)
 
 
 

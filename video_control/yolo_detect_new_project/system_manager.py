@@ -9,6 +9,7 @@ from core_hardware_driver.mpu6050_driver import MPU6050driver
 from core_hardware_driver.button_driver import ButtonDriver
 from core_algorithm.smart_control_algorithm import SmartControlAlgorithm
 from core_algorithm.PID_controller import PIDController
+from core_algorithm.kalman_algorithm import Kalman2DTracker
 import time
 import threading
 from queue import Queue
@@ -27,6 +28,8 @@ class SystemManager:
         self.rgb_led = LEDController(brightness=0.01)
         self.smart_control_algorithm = SmartControlAlgorithm()# 初始化智能超前预估控制算法
         self.pid_controller = PIDController()
+        self.kalman_tracker = Kalman2DTracker()
+        
         
         # 初始化按键驱动,并且直接注册了三个按键触发函数
         self.button_driver = ButtonDriver(
@@ -44,7 +47,8 @@ class SystemManager:
                                      "yolo detection\nno image no buzzer",
                                      "draw_record_chart",
                                      "feedforward_control\ntest",
-                                     "draw_record_chart\nfeedback_control")
+                                     "draw_record_chart\nfeedback_control",
+                                     "Kalman_test")
         self.menu_select_idx = 1
         self.current_program_mode = self.program_mode_storage[0]
         
@@ -183,6 +187,8 @@ class SystemManager:
             display_text = "RUNNING:\nFeedforward Control Test"
         elif self.current_program_mode == self.program_mode_storage[7]:
             display_text = "RUNNING:\nFeedback Control Test"
+        elif self.current_program_mode == self.program_mode_storage[8]:
+            display_text = "RUNNING:\nKalman Test"
         
         else:
             return  # 异常模式，不更新
