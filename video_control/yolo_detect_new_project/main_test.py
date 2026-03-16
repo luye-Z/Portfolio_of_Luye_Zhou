@@ -117,8 +117,8 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
     annotated_frame = None
     result = None
     
-    limit_predict_endurance = 20 #限制卡尔曼滤波预测的持续时间，单位为帧
-    lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
+    sys.limit_predict_endurance = 2 #限制卡尔曼滤波预测的持续时间，单位为帧
+    sys.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
     # YOLO 检测模式：调用 detect_frame
     print("YOLO 检测模式")
     
