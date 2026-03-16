@@ -65,12 +65,12 @@ def cv_show(frame, results, sys):
     
     return False
 
-def pid_control_servos(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12):
+def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12):
     #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
     # 调用舵机控制器跟踪目标
         #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
         
-        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        # obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
         # 调用 PID 控制器计算角度
         
         #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
