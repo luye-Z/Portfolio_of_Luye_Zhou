@@ -33,7 +33,7 @@ class SystemManager:
         
         
         #kalman filter predict 相关参数 ，这两个参数需要记忆性，
-        self.limit_predict_endurance = 2 #限制卡尔曼滤波预测的持续时间，单位为帧
+        self.limit_predict_endurance = 3 #限制卡尔曼滤波预测的持续时间，单位为帧
         self.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
         # 初始化按键驱动,并且直接注册了三个按键触发函数
         self.button_driver = ButtonDriver(

@@ -117,8 +117,8 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
     annotated_frame = None
     result = None
     
-    sys.limit_predict_endurance = 2 #限制卡尔曼滤波预测的持续时间，单位为帧
-    sys.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
+    # sys.limit_predict_endurance = 2 #限制卡尔曼滤波预测的持续时间，单位为帧
+    # sys.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
     # YOLO 检测模式：调用 detect_frame
     print("YOLO 检测模式")
     
@@ -155,9 +155,11 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         # 调用卡尔曼滤波控制的预测接口
         sys.lost_yolo_detetect_count += 1 #丢失目标次数加1
 
+
+        #采用降级控制策略
         if activate_kalman_filter and sys.lost_yolo_detetect_count <= sys.limit_predict_endurance: #如果开启了卡尔曼滤波，才调用预测接口
             predicted_x, predicted_y = sys.kalman_tracker.predict_only()
-            pid_control_servos(sys,predicted_x,predicted_y)#使用卡尔曼滤波预测的坐标来控制舵机
+            pid_control_servos(sys,predicted_x,predicted_y, kp_pan=0.10, kp_tilt=0.08, kd_pan=0, kd_tilt=0)#使用卡尔曼滤波预测的坐标来控制舵机
         
         print("未检测到目标")
         # 停止蜂鸣器报警
