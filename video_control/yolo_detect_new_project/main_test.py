@@ -250,6 +250,73 @@ def program_mode_draw_record_chart(sys):
     except Exception as e:
         print(f"写入记录失败: {e}")
 
+def program_mode_draw_record_chart_kalman(sys):
+    # 1. ========== 初始化记录文件路径 (CSV) ==========
+    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
+        record_dir = os.path.join(
+            current_script_dir, 
+            "detection_records_analyse", 
+            "detection_records"
+        )
+        
+        if not os.path.exists(record_dir):
+            os.makedirs(record_dir)
+            
+        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"data_record_kalman_{file_timestamp}.csv"
+        sys._record_file_path = os.path.join(record_dir, filename)
+        
+        # --- 修改点：在表头增加 kalman_x, kalman_y ---
+        with open(sys._record_file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'timestamp', 
+                'target_x', 'target_y', 
+                'kalman_x', 'kalman_y', 
+                'error_x', 'error_y', 
+                'pid_out_x', 'pid_out_y'
+            ])
+
+    # 2. ========== 执行 YOLO 检测与控制 ==========
+    # 注意：确保 program_mode_kalman_test 内部已经调用了 kalman_tracker.update
+    program_mode_kalman_test(sys)
+
+    # 3. ========== 获取数据并写入 ==========
+    try:
+        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
+
+        # 获取原始检测目标值
+        target_center = sys.detector.get_target_center()
+        t_x, t_y = target_center if target_center else (0.0, 0.0)
+        
+        # --- 修改点：获取 Kalman 滤波后的输出 ---
+        # 假设 kalman_tracker 存储了最后一次更新的状态，或者通过以下方式获取
+        # 如果 update_and_output 已经在 test 函数里跑过了，这里建议直接获取结果，防止二次更新导致状态偏移
+        k_out_x, k_out_y = sys.kalman_tracker.get_latest_prediction() # 假设有此方法
+        # 如果没有 get_latest_prediction，可以使用其状态变量，例如：
+        # k_out_x, k_out_y = sys.kalman_tracker.statePost[0], sys.kalman_tracker.statePost[1]
+
+        # 获取 PID 输出
+        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        # 获取误差
+        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
+        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
+
+        # --- 格式化数值 (包含 Kalman 数据) ---
+        values = [t_x, t_y, k_out_x, k_out_y, err_x, err_y, p_out_x, p_out_y]
+        formatted_values = [f"{val:.3f}" for val in values]
+
+        # 组合最终写入行
+        final_row = [now_time] + formatted_values
+
+        with open(sys._record_file_path, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(final_row)
+            
+    except Exception as e:
+        print(f"写入记录失败: {e}")
 
 
 
