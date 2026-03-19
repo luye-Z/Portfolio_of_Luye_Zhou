@@ -90,29 +90,32 @@ def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35,
         sys.servo_controller.set_tilt_angle(tilt_controller_output)
         
         
-def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
-#工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
-    # 调用舵机控制器跟踪目标
-        #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
+def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_center_y, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
+    # 工具函数：根据YOLO检测到的目标位置，更新舵机跟踪角度（包含PID与前馈控制）
+    
+    # 1. 基础空值检查：如果没检测到目标，直接退出
+    if obj_target_center_x is None or obj_target_center_y is None:
+        # 【关键保护】：目标丢失时，必须清空前馈的历史记忆，防止重捕获时计算出巨大的瞬间误差
+        sys.pid_controller.feedforward_last_target_x = None
+        sys.pid_controller.feedforward_last_target_y = None
+        return
         
-        # obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        # 调用 PID 控制器计算角度
+    # 2. 更新控制参数（PID 和 前馈参数）
+    sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
+    sys.pid_controller.pid_feedforward_parameters_update(Kff_pan, Kff_tilt)
+    
+    # 3. 调用控制器计算角度
+    sys.pid_controller.pid_control_calculate(obj_target_center_x, obj_target_center_y)
+    sys.pid_controller.feed_forward_control_calculate(obj_target_center_x, obj_target_center_y)
+     
+    # 4. 获取最终的控制器输出
+    pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+    
+    # 5. 控制舵机运动
+    sys.servo_controller.set_pan_angle(pan_controller_output)
+    sys.servo_controller.set_tilt_angle(tilt_controller_output)        
         
-        #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
-        if obj_target_center_x is None or obj_target_center_y is None:
-            return
-        
-        sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
-        
-        sys.pid_controller.pid_control_calculate(
-            obj_target_center_x, 
-            obj_target_center_y
-        )
-         # 获取 PID 控制器输出
-        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
-        #控制舵机运动
-        sys.servo_controller.set_pan_angle(pan_controller_output)
-        sys.servo_controller.set_tilt_angle(tilt_controller_output)
+
         
         
 def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
