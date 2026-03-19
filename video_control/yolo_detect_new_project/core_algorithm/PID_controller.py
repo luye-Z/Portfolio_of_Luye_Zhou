@@ -33,6 +33,9 @@ class PIDController:
         self.feedforward_last_target_y = None
         
         
+        self.delta_pan = 0.0
+        self.delta_tilt = 0.0
+        
         self.Kff_pan = 0.0
         self.Kff_tilt = 0.0
         
@@ -97,8 +100,8 @@ class PIDController:
 
             # PD 控制公式：delta = kp * error + kd * (error - last_error)
             # delta_pan = (self.error_x * self.DEG_PER_PIX) * self.kp_pan + (error_diff_x * self.DEG_PER_PIX) * self.kd_pan
-            delta_pan = self.DEG_PER_PIX*(self.kp_pan * self.error_x + self.kd_pan * error_diff_x)   
-            self.current_pan -= delta_pan  # 镜像调整
+            self.delta_pan = self.DEG_PER_PIX*(self.kp_pan * self.error_x + self.kd_pan * error_diff_x)   
+            self.current_pan -= self.delta_pan  # 镜像调整
 
             # self._set_angle(self.servo_pan, self.current_pan)
 
@@ -108,8 +111,8 @@ class PIDController:
 
             #delta_tilt = (self.error_y * self.DEG_PER_PIX) * self.kp_tilt + (error_diff_y * self.DEG_PER_PIX) * self.kd_tilt
             # 垂直方向需要反转，所以用减法
-            delta_tilt = self.DEG_PER_PIX*(self.kp_tilt * self.error_y + self.kd_tilt * error_diff_y)
-            self.current_tilt += delta_tilt
+            self.delta_tilt = self.DEG_PER_PIX*(self.kp_tilt * self.error_y + self.kd_tilt * error_diff_y)
+            self.current_tilt += self.delta_tilt
 
             # self._set_angle(self.servo_tilt, self.current_tilt)
         
@@ -143,8 +146,25 @@ class PIDController:
         
         
         
+    # def get_PID_controller_output(self):
+    #     # 返回当前的 pan 和 tilt 角度,直接给这个角度输入给舵机
+    #     #这里返回的角度可能只经过PID计算，或者经过PID和feedforward计算
+    #     return -(self.delta_pan), self.delta_tilt
+ 
+ 
+ #need to edit    
+    # def get_get_current_servos_angle(self):
+    #     # 返回当前的 pan 和 tilt 角度,直接给这个角度输入给舵机
+    #     #这里返回的角度可能只经过PID计算，或者经过PID和feedforward计算
+    #     return self.current_pan, self.current_tilt
+    
+    
     def get_PID_controller_output(self):
-        # 返回当前的 pan 和 tilt 角度,直接给这个角度输入给舵机
-        #这里返回的角度可能只经过PID计算，或者经过PID和feedforward计算
+
+        #绝对位置控制量
         return self.current_pan, self.current_tilt
     
+    
+    def get_pid_controller_middleware_output(self):
+        #增量（变化量控制量）
+        return -(self.delta_pan), self.delta_tilt
