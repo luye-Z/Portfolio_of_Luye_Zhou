@@ -24,101 +24,98 @@ def get_next_filename(base_name="tracking_analysis", ext=".png"):
                 max_num = max(max_num, 0)
     return os.path.join(save_dir, f"{base_name}_{max_num + 1}{ext}" if found else f"{base_name}{ext}")
 
-# --- 2. 数据准备与兼容性读取 ---
+# --- 2. 数据准备与动态列识别 ---
 file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260312_093900.csv"
 
 try:
-    # 先读取第一行探测列数
+    # 探测列数
     temp_df = pd.read_csv(file_path, nrows=0)
     col_count = len(temp_df.columns)
     
-    # 根据列数定义列名
+    # 核心映射逻辑
     if col_count == 9:
-        # 新版数据格式
-        column_names = ['timestamp', 'target_x', 'target_y', 'kalman_x', 'kalman_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y']
-        has_kalman = True
+        # 新版数据：含 Delta 增量
+        column_names = ['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 
+                        'delta_x', 'delta_y', 'pid_out_x', 'pid_out_y']
+        has_delta = True
+        print("检测到新版数据格式 (9列: 含控制增量)")
     else:
-        # 旧版数据格式 (7列)
-        column_names = ['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y']
-        has_kalman = False
+        # 老版数据：仅含 绝对输出
+        column_names = ['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 
+                        'pid_out_x', 'pid_out_y']
+        has_delta = False
+        print("检测到老版数据格式 (7列)")
 
     data = pd.read_csv(file_path, names=column_names, header=0)
     
-    # --- 3. 数据过滤 ---
+    # --- 3. 数据清理 ---
     valid_data = data[(data['target_x'] != 0) & (data['target_y'] != 0)].copy()
     if valid_data.empty:
-        print("错误：过滤后没有有效数据。")
+        print("错误：未找到有效追踪数据。")
         exit()
 
     # --- 4. 绘图美化 ---
     plt.style.use('seaborn-v0_8-muted')
-    # 如果有卡尔曼数据，我们增加一个子图用来对比滤波效果，共 4 个子图
-    num_subplots = 4 if has_kalman else 3
-    fig, axes = plt.subplots(num_subplots, 1, figsize=(12, 4 * num_subplots), sharex=True)
     
-    # 兼容处理 axes (如果只有1个子图 axes 不是列表)
-    if num_subplots == 1: axes = [axes]
-    
-    fig.suptitle(f'YOLO Tracking Analysis (Kalman: {"Enabled" if has_kalman else "None"})\nFile: {os.path.basename(file_path)}', 
-                 fontsize=16, fontweight='bold')
+    # 如果有 Delta 数据，画 4 张图，否则画 3 张
+    num_plots = 4 if has_delta else 3
+    fig, axes = plt.subplots(num_plots, 1, figsize=(12, 3.5 * num_plots), sharex=True)
+    if num_plots == 1: axes = [axes]
 
-    idx = 0
-    # 图 1: Kalman 对比 (仅在新数据中显示)
-    if has_kalman:
-        ax_k = axes[idx]
-        ax_k.plot(valid_data['timestamp'], valid_data['target_x'], label='Raw Target X', color='gray', alpha=0.4, linestyle='--')
-        ax_k.plot(valid_data['timestamp'], valid_data['kalman_x'], label='Kalman Filter X', color='#2E86C1', linewidth=2)
-        ax_k.set_ylabel('Coordinate X')
-        ax_k.set_title('Kalman Filtering Effect (X-axis)', fontsize=12, loc='left')
-        ax_k.legend(loc='upper right')
-        ax_k.grid(True, linestyle=':', alpha=0.6)
-        idx += 1
+    fig.suptitle(f'YOLO Tracking Precision Analysis\nFile: {os.path.basename(file_path)}', fontsize=15, fontweight='bold')
 
-    # 图 2: 误差曲线
-    ax_err = axes[idx]
-    ax_err.plot(valid_data['timestamp'], valid_data['error_x'], label='X Error', color='#2E86C1')
-    ax_err.plot(valid_data['timestamp'], valid_data['error_y'], label='Y Error', color='#E67E22')
-    ax_err.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-    ax_err.set_ylabel('Pixels Error')
-    ax_err.set_title('Real-time Tracking Deviation', fontsize=12, loc='left')
-    ax_err.legend(loc='upper right')
-    ax_err.grid(True, linestyle=':', alpha=0.6)
-    idx += 1
+    curr_ax = 0
 
-    # 图 3: 综合距离
-    ax_dist = axes[idx]
-    distance = np.sqrt(valid_data['error_x']**2 + valid_data['error_y']**2)
-    ax_dist.fill_between(valid_data['timestamp'], distance, color='#8E44AD', alpha=0.1)
-    ax_dist.plot(valid_data['timestamp'], distance, label='Total Distance', color='#8E44AD', linewidth=2)
-    ax_dist.set_ylabel('Distance (px)')
-    ax_dist.set_title('Combined Euclidean Error', fontsize=12, loc='left')
-    ax_dist.legend(loc='upper right')
-    ax_dist.grid(True, linestyle=':', alpha=0.6)
-    idx += 1
+    # 图 1: X/Y 误差 (Error)
+    axes[curr_ax].plot(valid_data['timestamp'], valid_data['error_x'], label='Error X', color='#2E86C1')
+    axes[curr_ax].plot(valid_data['timestamp'], valid_data['error_y'], label='Error Y', color='#E67E22')
+    axes[curr_ax].axhline(0, color='black', linestyle='--', alpha=0.3)
+    axes[curr_ax].set_ylabel('Pixels')
+    axes[curr_ax].set_title('Real-time Tracking Deviation (Error)', fontsize=11, loc='left')
+    axes[curr_ax].legend(loc='upper right')
+    axes[curr_ax].grid(True, linestyle=':', alpha=0.6)
+    curr_ax += 1
 
-    # 图 4: PID 输出
-    ax_pid = axes[idx]
-    ax_pid.plot(valid_data['timestamp'], valid_data['pid_out_x'], label='Servo X Output', color='#28B463')
-    ax_pid.plot(valid_data['timestamp'], valid_data['pid_out_y'], label='Servo Y Output', color='#C0392B')
-    ax_pid.set_xlabel('Timestamp')
-    ax_pid.set_ylabel('Control Value')
-    ax_pid.set_title('PID Controller Output', fontsize=12, loc='left')
-    ax_pid.legend(loc='upper right')
-    ax_pid.grid(True, linestyle=':', alpha=0.6)
+    # 图 2: 综合欧几里得距离 (Total Precision)
+    dist = np.sqrt(valid_data['error_x']**2 + valid_data['error_y']**2)
+    axes[curr_ax].fill_between(valid_data['timestamp'], dist, color='#8E44AD', alpha=0.1)
+    axes[curr_ax].plot(valid_data['timestamp'], dist, label='Total Distance', color='#8E44AD', linewidth=1.5)
+    axes[curr_ax].set_ylabel('Distance (px)')
+    axes[curr_ax].set_title('Combined Precision (Euclidean Distance)', fontsize=11, loc='left')
+    axes[curr_ax].grid(True, linestyle=':', alpha=0.6)
+    curr_ax += 1
 
-    # 优化时间戳显示
+    # 图 3: 控制增量 (Delta) - 仅在新版数据中显示
+    if has_delta:
+        axes[curr_ax].step(valid_data['timestamp'], valid_data['delta_x'], label='Delta Pan (deg)', color='#1ABC9C', where='post')
+        axes[curr_ax].step(valid_data['timestamp'], valid_data['delta_y'], label='Delta Tilt (deg)', color='#D35400', where='post')
+        axes[curr_ax].set_ylabel('Degrees Step')
+        axes[curr_ax].set_title('Control Intensity (PID Middleware Delta)', fontsize=11, loc='left')
+        axes[curr_ax].legend(loc='upper right')
+        axes[curr_ax].grid(True, linestyle=':', alpha=0.6)
+        curr_ax += 1
+
+    # 图 4: 最终舵机角度 (Servo Output)
+    axes[curr_ax].plot(valid_data['timestamp'], valid_data['pid_out_x'], label='Servo Pan', color='#28B463')
+    axes[curr_ax].plot(valid_data['timestamp'], valid_data['pid_out_y'], label='Servo Tilt', color='#C0392B')
+    axes[curr_ax].set_ylabel('Absolute Degrees')
+    axes[curr_ax].set_title('Final Servo Position (PID Output)', fontsize=11, loc='left')
+    axes[curr_ax].legend(loc='upper right')
+    axes[curr_ax].grid(True, linestyle=':', alpha=0.6)
+
+    # 优化 X 轴时间戳显示
     plt.xticks(rotation=45)
-    n = max(1, len(valid_data) // 15)
-    for i, label in enumerate(ax_pid.get_xticklabels()):
+    n = max(1, len(valid_data) // 12)
+    for i, label in enumerate(axes[-1].get_xticklabels()):
         if i % n != 0: label.set_visible(False)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    # --- 5. 保存与展示 ---
-    save_path = get_next_filename(base_name="tracking_analysis_kalman" if has_kalman else "tracking_analysis")
+    # --- 5. 保存 ---
+    save_path = get_next_filename()
     plt.savefig(save_path, dpi=300)
-    print(f"分析完成！格式: {'新版' if has_kalman else '旧版'}, 保存至: {save_path}")
+    print(f"处理完成！图表保存至: {save_path}")
     plt.show()
 
 except Exception as e:
-    print(f"程序运行出错: {e}")
+    print(f"分析失败: {e}")
