@@ -89,9 +89,10 @@ def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35,
         sys.servo_controller.set_pan_angle(pan_controller_output)
         sys.servo_controller.set_tilt_angle(tilt_controller_output)
         
+        
 def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
-    #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
-    # 调用舵机控制器跟踪目标
+        #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
+        # 调用舵机控制器跟踪目标
         #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
         
         obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
@@ -105,11 +106,12 @@ def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan
         sys.pid_controller.pid_control_calculate(obj_target_center_x, obj_target_center_y)
         sys.pid_controller.feed_forward_control_calculate(obj_target_center_x, obj_target_center_y)
          
-         # 获取 PID 控制器输出
+        # 获取 PID 控制器输出
         pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
         #控制舵机运动
         sys.servo_controller.set_pan_angle(pan_controller_output)
         sys.servo_controller.set_tilt_angle(tilt_controller_output)
+        
         
 def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
@@ -250,6 +252,70 @@ def program_mode_draw_record_chart(sys):
     except Exception as e:
         print(f"写入记录失败: {e}")
 
+
+def program_mode_draw_record_chart_new(sys, func = None ):
+    # 1. ========== 初始化记录文件路径 (CSV) ==========
+    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
+        record_dir = os.path.join(
+            current_script_dir, 
+            "detection_records_analyse", 
+            "detection_records"
+        )
+        
+        if not os.path.exists(record_dir):
+            os.makedirs(record_dir)
+            
+        # 生成带日期和时间的文件名
+        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"data_record_{file_timestamp}.csv"
+        sys._record_file_path = os.path.join(record_dir, filename)
+        
+        # 写入表头，增加 'timestamp' 列
+        with open(sys._record_file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
+
+    # 2. ========== 执行 YOLO 检测与控制 ==========
+    
+    if func is None:
+        program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False)
+    elif callable(func):
+        func(sys)
+    else:
+        print("错误：传入的 func 不是一个可执行的函数")
+        
+    # 3. ========== 获取数据并写入 ==========
+    try:
+        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
+        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
+
+        # 获取原始数值
+        target_center = sys.detector.get_target_center()
+        t_x, t_y = target_center if target_center else (0.0, 0.0)
+        
+        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
+        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
+
+        # 格式化数值精度
+        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
+        formatted_values = [f"{val:.3f}" for val in values]
+
+        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
+        final_row = [now_time] + formatted_values
+
+        with open(sys._record_file_path, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(final_row)
+            
+    except Exception as e:
+        print(f"写入记录失败: {e}")
+
+
+
+
 def program_mode_draw_record_chart_kalman(sys):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
@@ -325,7 +391,7 @@ def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_sc
         
         # 调用工具函数，更新舵机跟踪角度
         obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        pid_control_servos(sys,obj_target_center_x,obj_target_center_y)
+        update_servo_tracking_add_feedforward(sys,obj_target_center_x,obj_target_center_y)
         
 
         #activate indicator led and buzzer
