@@ -91,26 +91,48 @@ def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35,
         
         
 def update_servo_tracking_add_feedforward(sys, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
-        #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
-        # 调用舵机控制器跟踪目标
-        #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
+    # 1. 获取目标中心坐标
+    target_center = sys.detector.get_target_center()
+    
+    # 【安全防线 1：空值检查】防止解包报错或传入 None
+    if target_center is None or target_center[0] is None or target_center[1] is None:
+        # 目标丢失时必须清空前馈历史，防止目标再次出现时产生横跨屏幕的巨大误差
+        sys.pid_controller.feedforward_last_target_x = None
+        sys.pid_controller.feedforward_last_target_y = None
+        return
         
-        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        # 调用 PID 控制器计算角度
+    obj_target_center_x, obj_target_center_y = target_center
+
+    # 2. 更新 PID 和前馈参数
+    sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
+    sys.pid_controller.pid_feedforward_parameters_update(Kff_pan, Kff_tilt)
+    
+    # 【安全防线 2：防止目标切换或噪声引起的巨大跳变】
+    if sys.pid_controller.feedforward_last_target_x is not None:
+        diff_x = abs(obj_target_center_x - sys.pid_controller.feedforward_last_target_x)
+        diff_y = abs(obj_target_center_y - sys.pid_controller.feedforward_last_target_y)
         
-        #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
-        sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
-        sys.pid_controller.pid_feedforward_parameters_update(Kff_pan, Kff_tilt)
-        
-        
-        sys.pid_controller.pid_control_calculate(obj_target_center_x, obj_target_center_y)
-        sys.pid_controller.feed_forward_control_calculate(obj_target_center_x, obj_target_center_y)
-         
-        # 获取 PID 控制器输出
-        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
-        #控制舵机运动
-        sys.servo_controller.set_pan_angle(pan_controller_output)
-        sys.servo_controller.set_tilt_angle(tilt_controller_output)
+        # 如果一帧内目标移动超过画面宽/高的一半，极大概率是误检或切换了目标
+        # 这时前馈差值会导致舵机乱飞，因此直接重置历史坐标
+        if diff_x > (sys.pid_controller.SCREEN_WIDTH * 0.5) or diff_y > (sys.pid_controller.SCREEN_HEIGHT * 0.5):
+            sys.pid_controller.feedforward_last_target_x = None
+            sys.pid_controller.feedforward_last_target_y = None
+
+    # 3. 计算控制量
+    sys.pid_controller.pid_control_calculate(obj_target_center_x, obj_target_center_y)
+    sys.pid_controller.feed_forward_control_calculate(obj_target_center_x, obj_target_center_y)
+     
+    # 4. 获取控制输出
+    pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+    
+    # 【安全防线 3：角度硬限幅】防止极端情况下的数值超出舵机物理极限
+    # 此处假设常见舵机工作范围是 0~180 度。如果你的云台支持 360 度连续旋转，可修改或注释掉此段
+    pan_controller_output = max(0.0, min(180.0, pan_controller_output))
+    tilt_controller_output = max(0.0, min(180.0, tilt_controller_output))
+    
+    # 5. 控制舵机运动
+    sys.servo_controller.set_pan_angle(pan_controller_output)
+    sys.servo_controller.set_tilt_angle(tilt_controller_output)
         
         
 def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
@@ -253,7 +275,7 @@ def program_mode_draw_record_chart(sys):
         print(f"写入记录失败: {e}")
 
 
-def program_mode_draw_record_chart_new(sys, func = None ):
+def program_mode_draw_record_chart_new(sys, func = program_mode_kalman_test ):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
         current_script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -489,6 +511,8 @@ def running_code(sys):
         program_mode_yolodetection_show_no_buzzer(sys)
     elif current_program_mode =="yolo detection\nno image no buzzer":
         program_mode_yolodetection_no_show_no_buzzer(sys)
+    elif current_program_mode == "yolo detection\nfeedforward_control":
+        program_mode_feedforward_control_test(sys)
     elif current_program_mode =="draw_record_chart":
         program_mode_draw_record_chart(sys)
     elif current_program_mode == "draw_record_chart\nkalman":
