@@ -287,11 +287,13 @@ def program_mode_draw_record_chart_kalman(sys):
         
         p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
         
+        p_out_delta_x, p_out_delta_y = sys.pid_controller.get_pid_controller_middleware_output()
+        
         err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
         err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
 
         # 格式化数值精度
-        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
+        values = [t_x, t_y, err_x, err_y,p_out_delta_x, p_out_delta_y, p_out_x, p_out_y]
         formatted_values = [f"{val:.3f}" for val in values]
 
         # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
