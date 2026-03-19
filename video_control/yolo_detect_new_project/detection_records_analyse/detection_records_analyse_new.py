@@ -25,7 +25,7 @@ def get_next_filename(base_name="tracking_analysis", ext=".png"):
     return os.path.join(save_dir, f"{base_name}_{max_num + 1}{ext}" if found else f"{base_name}{ext}")
 
 # --- 2. 数据准备与动态列识别 ---
-file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260312_093900.csv"
+file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260319_095000.csv"
 
 try:
     # 探测列数
