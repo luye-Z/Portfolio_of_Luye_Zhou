@@ -271,7 +271,7 @@ def program_mode_draw_record_chart_kalman(sys):
         # 写入表头，增加 'timestamp' 列
         with open(sys._record_file_path, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
+            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y','p_out_delta_x','p_out_delta_y','pid_out_x', 'pid_out_y'])
 
     # 2. ========== 执行 YOLO 检测与控制 ==========
     program_mode_kalman_test(sys)
