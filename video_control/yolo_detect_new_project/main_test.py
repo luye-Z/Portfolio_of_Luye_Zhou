@@ -258,7 +258,7 @@ def program_mode_draw_record_chart(sys):
         print(f"写入记录失败: {e}")
 
 
-def program_mode_draw_record_chart_new(sys, func = None ):
+def program_mode_draw_record_chart_new(sys, func = None , insert_filename_str = "" ):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
         current_script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -273,13 +273,13 @@ def program_mode_draw_record_chart_new(sys, func = None ):
             
         # 生成带日期和时间的文件名
         file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data_record_{file_timestamp}.csv"
+        filename = f"data_record_{file_timestamp}_{insert_filename_str}.csv"
         sys._record_file_path = os.path.join(record_dir, filename)
         
         # 写入表头，增加 'timestamp' 列
         with open(sys._record_file_path, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
+            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y','p_out_delta_x','p_out_delta_y','pid_out_x', 'pid_out_y'])
 
     # 2. ========== 执行 YOLO 检测与控制 ==========
     
@@ -300,6 +300,8 @@ def program_mode_draw_record_chart_new(sys, func = None ):
         t_x, t_y = target_center if target_center else (0.0, 0.0)
         
         p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        p_out_delta_x, p_out_delta_y = sys.pid_controller.get_pid_controller_middleware_output()
         
         err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
         err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
@@ -499,7 +501,7 @@ def running_code(sys):
     elif current_program_mode =="draw_record_chart":
         program_mode_draw_record_chart(sys)
     elif current_program_mode == "draw_record_chart\nkalman":
-        program_mode_draw_record_chart_kalman(sys)
+        program_mode_draw_record_chart_new(sys, func = program_mode_kalman_test, insert_filename_str = "kalman")
     elif current_program_mode == "draw_record_chart\nfeedforward_control":
         program_mode_feedforward_draw_record_chart(sys)
     elif current_program_mode == "Kalman_test":
