@@ -336,7 +336,7 @@ def program_mode_draw_record_chart_kalman(sys):
             
         # 生成带日期和时间的文件名
         file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data_record_{file_timestamp}.csv"
+        filename = f"data_record_kalman_{file_timestamp}.csv"
         sys._record_file_path = os.path.join(record_dir, filename)
         
         # 写入表头，增加 'timestamp' 列
@@ -438,7 +438,7 @@ def program_mode_feedforward_draw_record_chart(sys):
             
         # 生成带日期和时间的文件名
         file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data_record_{file_timestamp}.csv"
+        filename = f"data_record_feedforward_{file_timestamp}.csv"
         sys._record_file_path = os.path.join(record_dir, filename)
         
         # 写入表头，增加 'timestamp' 列
@@ -499,8 +499,8 @@ def running_code(sys):
     elif current_program_mode =="draw_record_chart":
         program_mode_draw_record_chart(sys)
     elif current_program_mode == "draw_record_chart\nkalman":
-        program_mode_draw_record_chart_new(sys, program_mode_kalman_test)
-    elif current_program_mode == "draw_record_chart\nfeedback_control":
+        program_mode_draw_record_chart_kalman(sys)
+    elif current_program_mode == "draw_record_chart\nfeedforward_control":
         program_mode_feedforward_draw_record_chart(sys)
     elif current_program_mode == "Kalman_test":
         program_mode_kalman_test(sys)
