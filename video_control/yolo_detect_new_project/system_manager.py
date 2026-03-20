@@ -50,7 +50,7 @@ class SystemManager:
                                      "yolo detection\nno buzzer",
                                      "yolo detection\nno image no buzzer",
                                      "yolo detection\nfeedforward_control",
-                                     "draw_record_chart",
+                                     "draw_record_chart\Only_PID",
                                      "draw_record_chart\nkalman",
                                      "draw_record_chart\nfeedforward_control",
                                      "Kalman_test")
@@ -189,7 +189,7 @@ class SystemManager:
         elif self.current_program_mode == self.program_mode_storage[5]:
             display_text = "RUNNING:\nFeedforward Control"
         elif self.current_program_mode == self.program_mode_storage[6]:
-            display_text = "RUNNING:\nDraw charts"   
+            display_text = "RUNNING:\nDraw charts Only_PID"   
         elif self.current_program_mode == self.program_mode_storage[7]:
             display_text = "RUNNING:\nDraw charts kalman"
         elif self.current_program_mode == self.program_mode_storage[8]:

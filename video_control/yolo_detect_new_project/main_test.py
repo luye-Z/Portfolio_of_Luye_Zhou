@@ -307,7 +307,7 @@ def program_mode_draw_record_chart_new(sys, func = None , insert_filename_str = 
         err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
 
         # 格式化数值精度
-        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
+        values = [t_x, t_y, err_x, err_y,p_out_delta_x, p_out_delta_y, p_out_x, p_out_y]
         formatted_values = [f"{val:.3f}" for val in values]
 
         # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
@@ -498,12 +498,12 @@ def running_code(sys):
         program_mode_yolodetection_no_show_no_buzzer(sys)
     elif current_program_mode == "yolo detection\nfeedforward_control":
         program_mode_feedforward_control_test(sys)
-    elif current_program_mode =="draw_record_chart":
-        program_mode_draw_record_chart(sys)
+    elif current_program_mode =="draw_record_chart\nOnly_PID":
+        program_mode_draw_record_chart_new(sys,func = program_mode_yolodetection_no_show_no_buzzer, insert_filename_str = "Only_PID")
     elif current_program_mode == "draw_record_chart\nkalman":
         program_mode_draw_record_chart_new(sys, func = program_mode_kalman_test, insert_filename_str = "kalman")
     elif current_program_mode == "draw_record_chart\nfeedforward_control":
-        program_mode_feedforward_draw_record_chart(sys)
+        program_mode_draw_record_chart_new(sys, func = program_mode_feedforward_control_test, insert_filename_str = "feedforward_control")
     elif current_program_mode == "Kalman_test":
         program_mode_kalman_test(sys)
 
