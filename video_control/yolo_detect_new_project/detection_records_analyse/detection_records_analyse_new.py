@@ -54,7 +54,7 @@ def generate_output_filename(input_file_path):
     return os.path.join(save_dir, output_filename)
 
 # --- 2. 数据准备与动态列识别 ---
-file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260320_183824_Only_PID.csv"
+file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260322_205627_kalman.csv"
 
 try:
     # 探测列数
