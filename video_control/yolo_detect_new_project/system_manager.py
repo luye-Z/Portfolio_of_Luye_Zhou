@@ -50,7 +50,7 @@ class SystemManager:
                                      "yolo detection\nno buzzer",
                                      "yolo detection\nno image no buzzer",
                                      "yolo detection\nfeedforward_control",
-                                     "draw_record_chart\Only_PID",
+                                     "draw_record_chart\nOnly_PID",
                                      "draw_record_chart\nkalman",
                                      "draw_record_chart\nfeedforward_control",
                                      "Kalman_test")

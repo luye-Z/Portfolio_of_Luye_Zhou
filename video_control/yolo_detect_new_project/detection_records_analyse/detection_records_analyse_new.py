@@ -24,8 +24,37 @@ def get_next_filename(base_name="tracking_analysis", ext=".png"):
                 max_num = max(max_num, 0)
     return os.path.join(save_dir, f"{base_name}_{max_num + 1}{ext}" if found else f"{base_name}{ext}")
 
+# --- 1.1 根据输入文件名生成输出文件名 ---
+def generate_output_filename(input_file_path):
+    """
+    根据输入的CSV文件路径生成输出图片文件名。
+    示例:
+    输入: /path/data_record_20260320_181057_kalman.csv
+    输出: /path/detection_records_analysis_records/data_analyse_chart_20260320_181057_kalman.png
+    """
+    current_script_dir = os.path.dirname(os.path.abspath(__file__))
+    save_dir = os.path.join(current_script_dir, 'detection_records_analysis_records')
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    
+    # 获取输入文件名（不含路径）
+    input_basename = os.path.basename(input_file_path)
+    # 移除扩展名
+    name_without_ext = os.path.splitext(input_basename)[0]
+    
+    # 替换前缀
+    if name_without_ext.startswith("data_record_"):
+        output_basename = name_without_ext.replace("data_record_", "data_analyse_chart_", 1)
+    else:
+        # 如果文件名不符合预期，则使用默认前缀
+        output_basename = "data_analyse_chart_" + name_without_ext
+    
+    # 添加扩展名
+    output_filename = output_basename + ".png"
+    return os.path.join(save_dir, output_filename)
+
 # --- 2. 数据准备与动态列识别 ---
-file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260320_181057_kalman.csv"
+file_path = "/home/pi/projects/yolo26/video_control/yolo_detect_new_project/detection_records_analyse/detection_records/data_record_20260320_183824_Only_PID.csv"
 
 try:
     # 探测列数
@@ -112,7 +141,7 @@ try:
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # --- 5. 保存 ---
-    save_path = get_next_filename()
+    save_path = generate_output_filename(file_path)
     plt.savefig(save_path, dpi=300)
     print(f"处理完成！图表保存至: {save_path}")
     plt.show()
