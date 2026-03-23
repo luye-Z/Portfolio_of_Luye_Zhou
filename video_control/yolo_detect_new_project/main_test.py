@@ -118,7 +118,7 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
 
         
         
-def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.35, kp_tilt_set=0.30, kd_pan_set=0.15, kd_tilt_set=0.12): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     
     annotated_frame = None
@@ -142,9 +142,9 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
         if activate_kalman_filter:
             obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y = sys.kalman_tracker.update_and_output(obj_target_center_x, obj_target_center_y)
-            pid_control_servos(sys,obj_target_kalman_adjust_center_x,obj_target_kalman_adjust_center_y)
+            pid_control_servos(sys,obj_target_kalman_adjust_center_x,obj_target_kalman_adjust_center_y, kp_pan_set, kp_tilt_set, kd_pan_set, kd_tilt_set)
         else:
-            pid_control_servos(sys,obj_target_center_x,obj_target_center_y)
+            pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan_set, kp_tilt_set, kd_pan_set, kd_tilt_set)
         
 
         #activate indicator led and buzzer
@@ -180,7 +180,7 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
 
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.22, kd_tilt_set=0.22)
 
 def program_mode_yolodetection_show(sys):
     program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=True)   

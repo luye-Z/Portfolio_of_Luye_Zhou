@@ -25,23 +25,23 @@ class Kalman2DTracker:
             [0, 0, 0, 1]
         ], np.float32)
 
-# dt = 0.033 # 假设帧率为30fps
-# self.kf.transitionMatrix = np.array([
-#     [1, 0, dt, 0],  # 这里变了
-#     [0, 1, 0, dt],  # 这里变了
-#     [0, 0, 1, 0],
-#     [0, 0, 0, 1]
-# ], np.float32)
+        dt = 0.01 # 假设帧率为10fps
+        self.kf.transitionMatrix = np.array([
+            [1, 0, dt, 0],  # 这里变了
+            [0, 1, 0, dt],  # 这里变了
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ], np.float32)
 
 
         # ---------------- 核心调参区 ----------------
         # 过程噪声协方差矩阵 Q: 系统对“匀速直线运动模型”的信任程度。
         # 值越小，系统越认为目标是在匀速走直线，轨迹越平滑，但对目标突然转向的响应越慢。
-        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
+        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.2
         
         # 测量噪声协方差矩阵 R: 系统对“YOLO检测结果”的信任程度。
         # 值越大，系统越认为YOLO的结果有误差（噪点大），会更多地依赖上面的模型预测。
-        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.1
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.01
         # --------------------------------------------
 
         self.is_initialized = False
