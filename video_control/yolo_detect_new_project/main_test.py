@@ -180,7 +180,7 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
 
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.22, kd_tilt_set=0.22)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)
 
 def program_mode_yolodetection_show(sys):
     program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=True)   
@@ -481,13 +481,21 @@ def program_mode_feedforward_draw_record_chart(sys):
         
         
 def running_code(sys):
-    """
-    主运行函数：处理视频流、YOLO检测、舵机控制
-    :param sys: 系统管理器实例
-    """ 
-    # sys.program_mode_manager_oled_show()
-    current_program_mode = sys.get_program_mode()  # 把当前程序运行模式赋值给current_program_mode 
+    current_program_mode = sys.get_program_mode()
     
+    # 【新增逻辑】：检查模式是否发生了切换
+    # 如果当前模式和上次记录的模式不一样，说明是刚切换过来的，这时才重置路径
+    if not hasattr(sys, '_last_mode'):
+        sys._last_mode = None
+    
+    is_mode_changed = (current_program_mode != sys._last_mode)
+    if is_mode_changed:
+        sys._record_file_path = None  # 只有切换模式时才清空路径，触发新建文件
+        sys._last_mode = current_program_mode # 更新旧模式记录
+        print(f">>> 模式切换至: {current_program_mode}，已重置记录文件。")
+
+    # --- 以下是原有的逻辑，去掉里面的 sys._record_file_path = None ---
+
     if current_program_mode == "yolo detection\nno image":
         program_mode_yolo_detection(sys)
     elif current_program_mode == "yolo detection\nvc show":
@@ -499,14 +507,14 @@ def running_code(sys):
     elif current_program_mode == "yolo detection\nfeedforward_control":
         program_mode_feedforward_control_test(sys)
     elif current_program_mode =="draw_record_chart\nOnly_PID":
-        sys._record_file_path = None
-        program_mode_draw_record_chart_new(sys,func = program_mode_yolodetection_no_show_no_buzzer, insert_filename_str = "Only_PID")
+        # 删掉了这里的 sys._record_file_path = None
+        program_mode_draw_record_chart_new(sys, func=program_mode_yolodetection_no_show_no_buzzer, insert_filename_str="Only_PID")
     elif current_program_mode == "draw_record_chart\nkalman":
-        sys._record_file_path = None
-        program_mode_draw_record_chart_new(sys, func = program_mode_kalman_test, insert_filename_str = "kalman")
+        # 删掉了这里的 sys._record_file_path = None
+        program_mode_draw_record_chart_new(sys, func=program_mode_kalman_test, insert_filename_str="kalman")
     elif current_program_mode == "draw_record_chart\nfeedforward_control":
-        sys._record_file_path = None
-        program_mode_draw_record_chart_new(sys, func = program_mode_feedforward_control_test, insert_filename_str = "feedforward_control")
+        # 删掉了这里的 sys._record_file_path = None
+        program_mode_draw_record_chart_new(sys, func=program_mode_feedforward_control_test, insert_filename_str="feedforward_control")
     elif current_program_mode == "Kalman_test":
         program_mode_kalman_test(sys)
 
