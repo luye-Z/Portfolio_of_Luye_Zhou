@@ -499,10 +499,13 @@ def running_code(sys):
     elif current_program_mode == "yolo detection\nfeedforward_control":
         program_mode_feedforward_control_test(sys)
     elif current_program_mode =="draw_record_chart\nOnly_PID":
+        sys._record_file_path = None
         program_mode_draw_record_chart_new(sys,func = program_mode_yolodetection_no_show_no_buzzer, insert_filename_str = "Only_PID")
     elif current_program_mode == "draw_record_chart\nkalman":
+        sys._record_file_path = None
         program_mode_draw_record_chart_new(sys, func = program_mode_kalman_test, insert_filename_str = "kalman")
     elif current_program_mode == "draw_record_chart\nfeedforward_control":
+        sys._record_file_path = None
         program_mode_draw_record_chart_new(sys, func = program_mode_feedforward_control_test, insert_filename_str = "feedforward_control")
     elif current_program_mode == "Kalman_test":
         program_mode_kalman_test(sys)
