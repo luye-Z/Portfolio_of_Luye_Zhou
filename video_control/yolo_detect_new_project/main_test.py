@@ -92,7 +92,7 @@ def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35,
         
 def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_center_y, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
     # 工具函数：根据YOLO检测到的目标位置，更新舵机跟踪角度（包含PID与前馈控制）
-    
+    #只在前馈控制模式下使用
     # 1. 基础空值检查：如果没检测到目标，直接退出
     if obj_target_center_x is None or obj_target_center_y is None:
         # 【关键保护】：目标丢失时，必须清空前馈的历史记忆，防止重捕获时计算出巨大的瞬间误差
@@ -116,11 +116,9 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
     sys.servo_controller.set_tilt_angle(tilt_controller_output)        
         
 
-        
-        
 def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.35, kp_tilt_set=0.35, kd_pan_set=0.15, kd_tilt_set=0.15): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
-    
+    #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
     result = None
     
@@ -179,19 +177,65 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         cv_show(annotated_frame, result, sys)
         
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
-
+    #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
     program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.40, kp_tilt_set=0.40, kd_pan_set=0.35, kd_tilt_set=0.35)
 
 def program_mode_yolodetection_show(sys):
+    #YOLO检测模式，显示图像，蜂鸣器开启，不使用卡尔曼滤波预测
     program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=True,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
-
+    #YOLO检测模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=False)
     
 def program_mode_yolodetection_show_no_buzzer(sys):   
+    #YOLO检测模式，显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
 
+
+def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_screen_show=False):
+    #YOLO检测模式，基础模式，不显示图像。
+    
+    annotated_frame = None
+    result = None
+            
+
+    # YOLO 检测模式：调用 detect_frame
+    print("YOLO 检测模式")
+    
+    # 调用 YOLO 检测（只调用一次！）
+    result, annotated_frame = sys.detector.detect_frame()
+
+    # 检查是否检测到目标
+    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
+        
+        # 调用工具函数，更新舵机跟踪角度
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        update_servo_tracking_add_feedforward(sys,obj_target_center_x,obj_target_center_y)
+        
+
+        #activate indicator led and buzzer
+        sys.rgb_led.set_color_name("red")
+        
+        if activate_buzzer:
+            sys.buzzer.start_alarm()
+        
+        
+        current_d = sys.laser_sensor.distance
+        print(f"激光测距距离: {current_d} mm")
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+    else:
+        print("未检测到目标")
+        # 停止蜂鸣器报警
+        sys.buzzer.stop_alarm()
+        sys.rgb_led.set_color_name("green")
+    
+
+    
+    if annotated_frame is not None and result is not None and activate_screen_show:
+        cv_show(annotated_frame, result, sys)
 
 
 # def program_mode_draw_record_chart(sys):
@@ -202,7 +246,7 @@ def program_mode_yolodetection_show_no_buzzer(sys):
 #     """
     
 
-
+#OLD版本函数，可以被删除
 def program_mode_draw_record_chart(sys):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
@@ -257,7 +301,8 @@ def program_mode_draw_record_chart(sys):
     except Exception as e:
         print(f"写入记录失败: {e}")
 
-
+#NEW版本函数，添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+#func参数为可选的回调函数，用于在绘制记录图表前执行自定义操作，不显式传参，则默认使用program_mode_yolo_detection
 def program_mode_draw_record_chart_new(sys, func = None , insert_filename_str = "" ):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
@@ -322,7 +367,7 @@ def program_mode_draw_record_chart_new(sys, func = None , insert_filename_str = 
 
 
 
-
+#OLD，这也是重构代码之前的老版本代码，可以删除
 def program_mode_draw_record_chart_kalman(sys):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
@@ -379,52 +424,8 @@ def program_mode_draw_record_chart_kalman(sys):
     except Exception as e:
         print(f"写入记录失败: {e}")
 
-def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_screen_show=False):
-    #YOLO检测模式，基础模式，不显示图像。
-    
-    annotated_frame = None
-    result = None
-            
 
-    # YOLO 检测模式：调用 detect_frame
-    print("YOLO 检测模式")
-    
-    # 调用 YOLO 检测（只调用一次！）
-    result, annotated_frame = sys.detector.detect_frame()
-
-    # 检查是否检测到目标
-    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
-    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
-        
-        # 调用工具函数，更新舵机跟踪角度
-        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        update_servo_tracking_add_feedforward(sys,obj_target_center_x,obj_target_center_y)
-        
-
-        #activate indicator led and buzzer
-        sys.rgb_led.set_color_name("red")
-        
-        if activate_buzzer:
-            sys.buzzer.start_alarm()
-        
-        
-        current_d = sys.laser_sensor.distance
-        print(f"激光测距距离: {current_d} mm")
-        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
-    else:
-        print("未检测到目标")
-        # 停止蜂鸣器报警
-        sys.buzzer.stop_alarm()
-        sys.rgb_led.set_color_name("green")
-    
-
-    
-    if annotated_frame is not None and result is not None and activate_screen_show:
-        cv_show(annotated_frame, result, sys)
-
-
-
+#OLD，这也是老版本画图函数，可以被删除
 def program_mode_feedforward_draw_record_chart(sys):
     # 1. ========== 初始化记录文件路径 (CSV) ==========
     if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
@@ -479,7 +480,7 @@ def program_mode_feedforward_draw_record_chart(sys):
     except Exception as e:
         print(f"写入记录失败: {e}")
         
-        
+ 
 def running_code(sys):
     current_program_mode = sys.get_program_mode()
     
