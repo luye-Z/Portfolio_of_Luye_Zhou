@@ -178,7 +178,7 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.40, kp_tilt_set=0.40, kd_pan_set=0.1, kd_tilt_set=0.1)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.40, kp_tilt_set=0.40, kd_pan_set=0.20, kd_tilt_set=0.20)
 
 def program_mode_yolodetection_show(sys):
     #YOLO检测模式，显示图像，蜂鸣器开启，不使用卡尔曼滤波预测
