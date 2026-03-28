@@ -183,7 +183,7 @@ def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否�
     program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)
 
 def program_mode_yolodetection_show(sys):
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=True)   
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=True,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
 
