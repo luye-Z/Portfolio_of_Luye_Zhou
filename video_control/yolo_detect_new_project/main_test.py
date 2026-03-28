@@ -498,7 +498,7 @@ def running_code(sys):
     # --- 以下是原有的逻辑，去掉里面的 sys._record_file_path = None ---
 
     if current_program_mode == "yolo detection\nno image":
-        program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.2, kd_tilt_set=0.2)
+        program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.4, kd_tilt_set=0.4)
     elif current_program_mode == "yolo detection\nvc show":
         program_mode_yolodetection_show(sys)
     elif current_program_mode == "yolo detection\nno buzzer":
