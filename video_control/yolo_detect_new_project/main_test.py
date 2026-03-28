@@ -180,7 +180,7 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
 
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.40, kp_tilt_set=0.40, kd_pan_set=0.35, kd_tilt_set=0.35)
 
 def program_mode_yolodetection_show(sys):
     program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=True,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)   
@@ -497,7 +497,7 @@ def running_code(sys):
     # --- 以下是原有的逻辑，去掉里面的 sys._record_file_path = None ---
 
     if current_program_mode == "yolo detection\nno image":
-        program_mode_yolo_detection(sys)
+        program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.15, kd_tilt_set=0.15)
     elif current_program_mode == "yolo detection\nvc show":
         program_mode_yolodetection_show(sys)
     elif current_program_mode == "yolo detection\nno buzzer":
