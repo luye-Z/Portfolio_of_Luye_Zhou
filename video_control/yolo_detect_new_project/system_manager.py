@@ -45,6 +45,7 @@ class SystemManager:
         
         # 这些模式中，第一个也就是索引号是0是菜单模式，剩下的是运行模式
         self.program_mode_storage = ("program menu",
+                                     "Kalman_test",
                                      "yolo detection\nvc show",
                                      "yolo detection\nno image",
                                      "yolo detection\nno buzzer",
@@ -53,7 +54,7 @@ class SystemManager:
                                      "draw_record_chart\nOnly_PID",
                                      "draw_record_chart\nkalman",
                                      "draw_record_chart\nfeedforward_control",
-                                     "Kalman_test")
+                                     )
         self.menu_select_idx = 1
         self.current_program_mode = self.program_mode_storage[0]
         
@@ -179,23 +180,24 @@ class SystemManager:
             selected_name = self.program_mode_storage[self.menu_select_idx]
             display_text = f"--- MENU ---\n> {selected_name}"
         elif self.current_program_mode == self.program_mode_storage[1]:
-            display_text = "RUNNING:\nDetection + CV"
+            display_text = "RUNNING:\nKalman no show"
         elif self.current_program_mode == self.program_mode_storage[2]:
-            display_text = "RUNNING:\nHeadless Mode"
+            display_text = "RUNNING:\nPID show"
         elif self.current_program_mode == self.program_mode_storage[3]:
-            display_text = "RUNNING:\nDetect No Buzzer"
+            display_text = "RUNNING:\nPID no show"
         elif self.current_program_mode == self.program_mode_storage[4]:
-            display_text = "RUNNING:\nHeadless No Buzzer"
+            display_text = "RUNNING:\nPID show no buzzer"
         elif self.current_program_mode == self.program_mode_storage[5]:
-            display_text = "RUNNING:\nFeedforward Control"
+            display_text = "RUNNING:\nPID no image\nno buzzer"
         elif self.current_program_mode == self.program_mode_storage[6]:
-            display_text = "RUNNING:\nDraw charts Only_PID"   
+            display_text = "RUNNING:\nfeedforward\nno image"                         
         elif self.current_program_mode == self.program_mode_storage[7]:
-            display_text = "RUNNING:\nDraw charts kalman"
+            display_text = "RUNNING:\nDraw charts Only_PID"   
         elif self.current_program_mode == self.program_mode_storage[8]:
-            display_text = "RUNNING:\nDraw charts feedforward"
+            display_text = "RUNNING:\nDraw charts kalman"
         elif self.current_program_mode == self.program_mode_storage[9]:
-            display_text = "RUNNING:\nKalman Test"
+            display_text = "RUNNING:\nDraw charts feedforward"
+
         
         else:
             return  # 异常模式，不更新
