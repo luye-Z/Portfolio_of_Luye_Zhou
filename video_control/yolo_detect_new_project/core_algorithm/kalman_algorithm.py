@@ -76,7 +76,7 @@ class Kalman2DTracker:
 
         # 值越小，系统越认为目标是在匀速走直线，轨迹越平滑，但对目标突然转向的响应越慢。
 
-        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.8
+        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.5
 
        
 
@@ -84,7 +84,7 @@ class Kalman2DTracker:
 
         # 值越大，系统越认为YOLO的结果有误差（噪点大），会更多地依赖上面的模型预测。
 
-        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.05
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.08
 
         # --------------------------------------------
 
