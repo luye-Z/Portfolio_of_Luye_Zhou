@@ -115,13 +115,13 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
     sys.servo_controller.set_pan_angle(pan_controller_output)
     sys.servo_controller.set_tilt_angle(tilt_controller_output)        
     
-def deadzone_filtration(sys, obj_target_center_x, obj_target_center_y, deadzone_portion=0.01):
-    #工具函数，根据死区大小，过滤掉目标位置在死区内的情况
-    if abs(obj_target_center_x - sys.detector.SCREEN_WIDTH / 2) < deadzone_portion * sys.detector.SCREEN_WIDTH : 
-        obj_target_center_x = sys.detector.SCREEN_WIDTH / 2
-    if abs(obj_target_center_y - sys.detector.SCREEN_HEIGHT / 2) < deadzone_portion * sys.detector.SCREEN_HEIGHT:
-        obj_target_center_y = sys.detector.SCREEN_HEIGHT / 2
-    return obj_target_center_x, obj_target_center_y
+# def deadzone_filtration(sys, obj_target_center_x, obj_target_center_y, deadzone_portion=0.01):
+#     #工具函数，根据死区大小，过滤掉目标位置在死区内的情况
+#     if abs(obj_target_center_x - sys.detector.SCREEN_WIDTH / 2) < deadzone_portion * sys.detector.SCREEN_WIDTH : 
+#         obj_target_center_x = sys.detector.SCREEN_WIDTH / 2
+#     if abs(obj_target_center_y - sys.detector.SCREEN_HEIGHT / 2) < deadzone_portion * sys.detector.SCREEN_HEIGHT:
+#         obj_target_center_y = sys.detector.SCREEN_HEIGHT / 2
+#     return obj_target_center_x, obj_target_center_y
 
 
 def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.31, kp_tilt_set=0.31, kd_pan_set=0.22, kd_tilt_set=0.22): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
@@ -129,6 +129,11 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
     #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
     result = None
+    
+    #打印串口标志位，为了限制打印次数，节省CPU性能，不再每一帧都打印信息
+    PRINT_INTERVAL_FRAMES = 20 #打印间隔帧数
+    sys.print_open_restrict_count += 1   
+     
     
     # sys.limit_predict_endurance = 2 #限制卡尔曼滤波预测的持续时间，单位为帧
     # sys.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
@@ -164,9 +169,12 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
         
         current_d = sys.laser_sensor.distance
-        print(f"激光测距距离: {current_d} mm")
-        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
-        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+        # obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        #打印部分：
+        if sys.print_open_restrict_count >= PRINT_INTERVAL_FRAMES:
+            # 极简英文输出，减少终端滚动压力
+            print(f"[LOG] Dist:{current_d}mm | Center:({obj_target_center_x:.1f},{obj_target_center_y:.1f})")
+            sys.print_open_restrict_count = 0 #重置打印次数
     else:
         # 调用卡尔曼滤波控制的预测接口
         sys.lost_yolo_detetect_count += 1 #丢失目标次数加1
@@ -556,8 +564,8 @@ if __name__ == "__main__":
             current_time = time.time()
             
             # 每5秒打印一次帧率
-            if current_time - last_print_time >= 5.0:
-                elapsed = current_time - start_time
-                fps = frame_count / elapsed
-                print(f"[PERFORMANCE] Frames: {frame_count}, Time: {elapsed:.2f}s, FPS: {fps:.2f}")
-                last_print_time = current_time
+            # if current_time - last_print_time >= 5.0:
+            #     elapsed = current_time - start_time
+            #     fps = frame_count / elapsed
+            #     print(f"[PERFORMANCE] Frames: {frame_count}, Time: {elapsed:.2f}s, FPS: {fps:.2f}")
+            #     last_print_time = current_time

@@ -36,6 +36,9 @@ class SystemManager:
         self.limit_predict_endurance = 7 #限制卡尔曼滤波预测的持续时间，单位为帧
         self.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
         # 初始化按键驱动,并且直接注册了三个按键触发函数
+        
+        self.print_open_restrict_count = 0
+        
         self.button_driver = ButtonDriver(
             pin=23,
             short_cb=self.action_short_press,
