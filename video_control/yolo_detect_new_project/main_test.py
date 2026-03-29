@@ -124,7 +124,7 @@ def deadzone_filtration(sys, obj_target_center_x, obj_target_center_y, deadzone_
     return obj_target_center_x, obj_target_center_y
 
 
-def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.08, kd_tilt_set=0.08): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.38, kp_tilt_set=0.38, kd_pan_set=0.15, kd_tilt_set=0.15): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
