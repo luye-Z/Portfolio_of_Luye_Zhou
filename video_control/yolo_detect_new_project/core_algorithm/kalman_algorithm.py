@@ -84,7 +84,7 @@ class Kalman2DTracker:
 
         # 值越大，系统越认为YOLO的结果有误差（噪点大），会更多地依赖上面的模型预测。
 
-        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.01
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.05
 
         # --------------------------------------------
 
