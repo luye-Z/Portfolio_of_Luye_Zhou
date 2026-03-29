@@ -163,7 +163,7 @@ class SystemManager:
                 # 捕获所有异常，防止线程崩溃
                 time.sleep(0.1)
                 continue
-    
+      
     def program_mode_manager_oled_show(self, force_update=False):
         """
         非阻塞式 OLED 更新函数（优化版）

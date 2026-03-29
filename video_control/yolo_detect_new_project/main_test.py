@@ -114,9 +114,17 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
     # 5. 控制舵机运动
     sys.servo_controller.set_pan_angle(pan_controller_output)
     sys.servo_controller.set_tilt_angle(tilt_controller_output)        
-        
+    
+def deadzone_filtration(sys, obj_target_center_x, obj_target_center_y, deadzone_portion=0.01):
+    #工具函数，根据死区大小，过滤掉目标位置在死区内的情况
+    if abs(obj_target_center_x - sys.detector.SCREEN_WIDTH / 2) < deadzone_portion * sys.detector.SCREEN_WIDTH : 
+        obj_target_center_x = sys.detector.SCREEN_WIDTH / 2
+    if abs(obj_target_center_y - sys.detector.SCREEN_HEIGHT / 2) < deadzone_portion * sys.detector.SCREEN_HEIGHT:
+        obj_target_center_y = sys.detector.SCREEN_HEIGHT / 2
+    return obj_target_center_x, obj_target_center_y
 
-def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.35, kp_tilt_set=0.35, kd_pan_set=0.15, kd_tilt_set=0.15): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.08, kd_tilt_set=0.08): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
@@ -138,10 +146,13 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
         # 调用工具函数，更新舵机跟踪角度
         obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+
         if activate_kalman_filter:
             obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y = sys.kalman_tracker.update_and_output(obj_target_center_x, obj_target_center_y)
+            # obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y = deadzone_filtration(sys, obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y, deadzone_portion=0.01)
             pid_control_servos(sys,obj_target_kalman_adjust_center_x,obj_target_kalman_adjust_center_y, kp_pan_set, kp_tilt_set, kd_pan_set, kd_tilt_set)
         else:
+            # obj_target_center_x,obj_target_center_y =  deadzone_filtration(sys,obj_target_center_x,obj_target_center_y,deadzone_portion=0.01)
             pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan_set, kp_tilt_set, kd_pan_set, kd_tilt_set)
         
 
@@ -178,11 +189,11 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
         
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.40, kp_tilt_set=0.40, kd_pan_set=0.20, kd_tilt_set=0.20)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=False)
 
 def program_mode_yolodetection_show(sys):
     #YOLO检测模式，显示图像，蜂鸣器开启，不使用卡尔曼滤波预测
-    program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=True,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.35, kd_tilt_set=0.35)   
+    program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=True)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
     #YOLO检测模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
@@ -498,7 +509,7 @@ def running_code(sys):
     # --- 以下是原有的逻辑，去掉里面的 sys._record_file_path = None ---
 
     if current_program_mode == "yolo detection\nno image":
-        program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.1, kd_tilt_set=0.1)
+        program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False)
     elif current_program_mode == "yolo detection\nvc show":
         program_mode_yolodetection_show(sys)
     elif current_program_mode == "yolo detection\nno buzzer":
