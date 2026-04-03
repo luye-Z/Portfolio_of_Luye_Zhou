@@ -124,7 +124,7 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
 #     return obj_target_center_x, obj_target_center_y
 
 
-def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=1, kp_tilt_set=1, kd_pan_set=0.08, kd_tilt_set=0.08): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.35, kp_tilt_set=0.35, kd_pan_set=0.08, kd_tilt_set=0.08): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
@@ -213,8 +213,64 @@ def program_mode_yolodetection_show_no_buzzer(sys):
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
 
 def program_mode_PID_parameter_adjust(sys):
-    #PID参数调整模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
-    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=False)
+    # PID参数调整模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
+    # 添加终端输入输出框，让用户可以输入PID值进行在线调参
+    
+    # 检查是否已经设置了PID参数（第一次进入该模式时）
+    if not hasattr(sys, '_pid_params_set') or not sys._pid_params_set:
+        print("\n" + "="*50)
+        print("PID参数调整模式")
+        print("请输入PID参数（按回车使用默认值，输入 'q' 重新开始）")
+        print("="*50)
+        
+        # 输入循环，允许用户按 'q' 重新输入
+        while True:
+            try:
+                # 获取用户输入
+                kp_pan_input = input("请输入 kp_pan (默认: 0.35): ").strip()
+                if kp_pan_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                kp_tilt_input = input("请输入 kp_tilt (默认: 0.35): ").strip()
+                if kp_tilt_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                kd_pan_input = input("请输入 kd_pan (默认: 0.08): ").strip()
+                if kd_pan_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                kd_tilt_input = input("请输入 kd_tilt (默认: 0.08): ").strip()
+                if kd_tilt_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                # 解析输入，如果为空则使用默认值
+                kp_pan = float(kp_pan_input) if kp_pan_input else 0.35
+                kp_tilt = float(kp_tilt_input) if kp_tilt_input else 0.35
+                kd_pan = float(kd_pan_input) if kd_pan_input else 0.08
+                kd_tilt = float(kd_tilt_input) if kd_tilt_input else 0.08
+                
+                # 存储参数到系统管理器
+                sys._pid_params = (kp_pan, kp_tilt, kd_pan, kd_tilt)
+                sys._pid_params_set = True
+                
+                print(f"\n已设置PID参数: kp_pan={kp_pan}, kp_tilt={kp_tilt}, kd_pan={kd_pan}, kd_tilt={kd_tilt}")
+                print("按回车开始运行...")
+                input()  # 等待用户确认
+                break  # 输入成功，退出循环
+                
+            except ValueError:
+                print("输入无效，请重新输入所有参数（或按 'q' 重新开始）")
+                # 继续循环重新输入
+    
+    # 使用存储的PID参数运行YOLO检测
+    kp_pan, kp_tilt, kd_pan, kd_tilt = sys._pid_params
+    program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False,
+                                kp_pan_set=kp_pan, kp_tilt_set=kp_tilt,
+                                kd_pan_set=kd_pan, kd_tilt_set=kd_tilt)
 
 def program_mode_feedforward_control_test(sys , activate_buzzer=False,activate_screen_show=False):
     #YOLO检测模式，基础模式，不显示图像。
@@ -515,6 +571,9 @@ def running_code(sys):
     is_mode_changed = (current_program_mode != sys._last_mode)
     if is_mode_changed:
         sys._record_file_path = None  # 只有切换模式时才清空路径，触发新建文件
+        # 重置PID参数标志，以便在PID参数调整模式下重新提示用户输入
+        if hasattr(sys, '_pid_params_set'):
+            delattr(sys, '_pid_params_set')
         sys._last_mode = current_program_mode # 更新旧模式记录
         print(f">>> 模式切换至: {current_program_mode}，已重置记录文件。")
 
