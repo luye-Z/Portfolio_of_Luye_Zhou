@@ -124,7 +124,7 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
 #     return obj_target_center_x, obj_target_center_y
 
 
-def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.30, kp_tilt_set=0.30, kd_pan_set=0.08, kd_tilt_set=0.08): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=1, kp_tilt_set=1, kd_pan_set=0.08, kd_tilt_set=0.08): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
@@ -195,6 +195,7 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
     if annotated_frame is not None and result is not None and activate_screen_show:
         cv_show(annotated_frame, result, sys)
         
+
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
     program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=False,activate_screen_show=False)
@@ -211,8 +212,11 @@ def program_mode_yolodetection_show_no_buzzer(sys):
     #YOLO检测模式，显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
 
+def program_mode_PID_parameter_adjust(sys):
+    #PID参数调整模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=False)
 
-def program_mode_feedforward_control_test(sys , activate_buzzer=True,activate_screen_show=False):
+def program_mode_feedforward_control_test(sys , activate_buzzer=False,activate_screen_show=False):
     #YOLO检测模式，基础模式，不显示图像。
     
     annotated_frame = None
@@ -518,6 +522,8 @@ def running_code(sys):
 
     if current_program_mode == "yolo detection\nno image":
         program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False)
+    elif current_program_mode == "PID_parameter\nadjust":
+        program_mode_PID_parameter_adjust(sys)
     elif current_program_mode == "yolo detection\nvc show":
         program_mode_yolodetection_show(sys)
     elif current_program_mode == "yolo detection\nno buzzer":
