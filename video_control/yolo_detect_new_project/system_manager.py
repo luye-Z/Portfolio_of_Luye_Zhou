@@ -243,20 +243,19 @@ class SystemManager:
     def action_long_press(self):
         """长按处理"""
         print("【长按】->进入系统设置")
-        if self.get_program_mode() != self.program_mode_storage[0]:
-            # 当前模式不是菜单模式，是运行模式之一
-            self.program_mode_set(0)
-            self.menu_select_idx = 1
-            
-            # 按键事件：强制立即更新 OLED
-            self.program_mode_manager_oled_show(force_update=True)
-                    
-            #还需要清理一些GPIO外设，蜂鸣器，RGB灯，等等，要不然可能会出现模式切换，蜂鸣器一直卡在鸣叫的状态里面
-            self.rgb_led.off() # 关闭RGB灯
-            self.buzzer.stop_alarm() # 关闭蜂鸣器
-            self.servo_controller.reset() # 重置舵机角度
+                # 当前模式不是菜单模式，是运行模式之一
+        self.program_mode_set(0)
+        self.menu_select_idx = 1
+        
+        # 按键事件：强制立即更新 OLED
+        self.program_mode_manager_oled_show(force_update=True)
+                
+        #还需要清理一些GPIO外设，蜂鸣器，RGB灯，等等，要不然可能会出现模式切换，蜂鸣器一直卡在鸣叫的状态里面
+        self.rgb_led.off() # 关闭RGB灯
+        self.buzzer.stop_alarm() # 关闭蜂鸣器
+        self.servo_controller.reset() # 重置舵机角度
 
-            self.pid_controller.reset_control_parameters() # 重置PID控制器参数
+        self.pid_controller.reset_control_parameters() # 重置PID控制器参数
             
     def action_double_click(self):
         """双击处理"""
