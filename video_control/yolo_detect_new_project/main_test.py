@@ -115,13 +115,6 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
     sys.servo_controller.set_pan_angle(pan_controller_output)
     sys.servo_controller.set_tilt_angle(tilt_controller_output)        
     
-# def deadzone_filtration(sys, obj_target_center_x, obj_target_center_y, deadzone_portion=0.01):
-#     #工具函数，根据死区大小，过滤掉目标位置在死区内的情况
-#     if abs(obj_target_center_x - sys.detector.SCREEN_WIDTH / 2) < deadzone_portion * sys.detector.SCREEN_WIDTH : 
-#         obj_target_center_x = sys.detector.SCREEN_WIDTH / 2
-#     if abs(obj_target_center_y - sys.detector.SCREEN_HEIGHT / 2) < deadzone_portion * sys.detector.SCREEN_HEIGHT:
-#         obj_target_center_y = sys.detector.SCREEN_HEIGHT / 2
-#     return obj_target_center_x, obj_target_center_y
 
 
 def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.37, kp_tilt_set=0.37, kd_pan_set=0.14, kd_tilt_set=0.14): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
@@ -329,60 +322,7 @@ def program_mode_feedforward_control_test(sys , activate_buzzer=False,activate_s
 #     """
     
 
-#OLD版本函数，可以被删除
-def program_mode_draw_record_chart(sys):
-    # 1. ========== 初始化记录文件路径 (CSV) ==========
-    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
-        current_script_dir = os.path.dirname(os.path.abspath(__file__))
-        record_dir = os.path.join(
-            current_script_dir, 
-            "detection_records_analyse", 
-            "detection_records"
-        )
-        
-        if not os.path.exists(record_dir):
-            os.makedirs(record_dir)
-            
-        # 生成带日期和时间的文件名
-        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data_record_{file_timestamp}.csv"
-        sys._record_file_path = os.path.join(record_dir, filename)
-        
-        # 写入表头，增加 'timestamp' 列
-        with open(sys._record_file_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
 
-    # 2. ========== 执行 YOLO 检测与控制 ==========
-    program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False)
-
-    # 3. ========== 获取数据并写入 ==========
-    try:
-        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
-        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
-
-        # 获取原始数值
-        target_center = sys.detector.get_target_center()
-        t_x, t_y = target_center if target_center else (0.0, 0.0)
-        
-        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
-        
-        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
-        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
-
-        # 格式化数值精度
-        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
-        formatted_values = [f"{val:.3f}" for val in values]
-
-        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
-        final_row = [now_time] + formatted_values
-
-        with open(sys._record_file_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(final_row)
-            
-    except Exception as e:
-        print(f"写入记录失败: {e}")
 
 #NEW版本函数，添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
 #func参数为可选的回调函数，用于在绘制记录图表前执行自定义操作，不显式传参，则默认使用program_mode_yolo_detection
@@ -450,119 +390,10 @@ def program_mode_draw_record_chart_new(sys, func = None , insert_filename_str = 
 
 
 
-#OLD，这也是重构代码之前的老版本代码，可以删除
-def program_mode_draw_record_chart_kalman(sys):
-    # 1. ========== 初始化记录文件路径 (CSV) ==========
-    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
-        current_script_dir = os.path.dirname(os.path.abspath(__file__))
-        record_dir = os.path.join(
-            current_script_dir, 
-            "detection_records_analyse", 
-            "detection_records"
-        )
-        
-        if not os.path.exists(record_dir):
-            os.makedirs(record_dir)
-            
-        # 生成带日期和时间的文件名
-        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data_record_kalman_{file_timestamp}.csv"
-        sys._record_file_path = os.path.join(record_dir, filename)
-        
-        # 写入表头，增加 'timestamp' 列
-        with open(sys._record_file_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y','p_out_delta_x','p_out_delta_y','pid_out_x', 'pid_out_y'])
-
-    # 2. ========== 执行 YOLO 检测与控制 ==========
-    program_mode_kalman_test(sys)
-
-    # 3. ========== 获取数据并写入 ==========
-    try:
-        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
-        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
-
-        # 获取原始数值
-        target_center = sys.detector.get_target_center()
-        t_x, t_y = target_center if target_center else (0.0, 0.0)
-        
-        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
-        
-        p_out_delta_x, p_out_delta_y = sys.pid_controller.get_pid_controller_middleware_output()
-        
-        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
-        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
-
-        # 格式化数值精度
-        values = [t_x, t_y, err_x, err_y,p_out_delta_x, p_out_delta_y, p_out_x, p_out_y]
-        formatted_values = [f"{val:.3f}" for val in values]
-
-        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
-        final_row = [now_time] + formatted_values
-
-        with open(sys._record_file_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(final_row)
-            
-    except Exception as e:
-        print(f"写入记录失败: {e}")
 
 
-#OLD，这也是老版本画图函数，可以被删除
-def program_mode_feedforward_draw_record_chart(sys):
-    # 1. ========== 初始化记录文件路径 (CSV) ==========
-    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
-        current_script_dir = os.path.dirname(os.path.abspath(__file__))
-        record_dir = os.path.join(
-            current_script_dir, 
-            "detection_records_analyse", 
-            "detection_records"
-        )
-        
-        if not os.path.exists(record_dir):
-            os.makedirs(record_dir)
-            
-        # 生成带日期和时间的文件名
-        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data_record_feedforward_{file_timestamp}.csv"
-        sys._record_file_path = os.path.join(record_dir, filename)
-        
-        # 写入表头，增加 'timestamp' 列
-        with open(sys._record_file_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y', 'pid_out_x', 'pid_out_y'])
 
-    # 2. ========== 执行 YOLO 检测与控制 ==========
-    program_mode_feedforward_control_test(sys, activate_buzzer=False, activate_screen_show=False)
 
-    # 3. ========== 获取数据并写入 ==========
-    try:
-        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
-        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
-
-        # 获取原始数值
-        target_center = sys.detector.get_target_center()
-        t_x, t_y = target_center if target_center else (0.0, 0.0)
-        
-        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
-        
-        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
-        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
-
-        # 格式化数值精度
-        values = [t_x, t_y, err_x, err_y, p_out_x, p_out_y]
-        formatted_values = [f"{val:.3f}" for val in values]
-
-        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
-        final_row = [now_time] + formatted_values
-
-        with open(sys._record_file_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(final_row)
-            
-    except Exception as e:
-        print(f"写入记录失败: {e}")
-        
  
 def running_code(sys):
     current_program_mode = sys.get_program_mode()
@@ -634,9 +465,4 @@ if __name__ == "__main__":
             frame_count += 1
             current_time = time.time()
             
-            # 每5秒打印一次帧率
-            # if current_time - last_print_time >= 5.0:
-            #     elapsed = current_time - start_time
-            #     fps = frame_count / elapsed
-            #     print(f"[PERFORMANCE] Frames: {frame_count}, Time: {elapsed:.2f}s, FPS: {fps:.2f}")
-            #     last_print_time = current_time
+
