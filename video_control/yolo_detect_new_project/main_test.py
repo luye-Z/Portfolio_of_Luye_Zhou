@@ -198,7 +198,7 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
 
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=False,activate_screen_show=False)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=False,activate_screen_show=False,kp_pan_set=0.4, kp_tilt_set=0.4, kd_pan_set=0.12, kd_tilt_set=0.12)
 
 def program_mode_yolodetection_show(sys):
     #YOLO检测模式，显示图像，蜂鸣器开启，不使用卡尔曼滤波预测
@@ -211,6 +211,10 @@ def program_mode_yolodetection_no_show_no_buzzer(sys):
 def program_mode_yolodetection_show_no_buzzer(sys):   
     #YOLO检测模式，显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
     program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
+
+def program_mode_yolodetection_show_make_datasets(sys):
+    #YOLO检测模式，显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测，制作数据集
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)
 
 def program_mode_PID_parameter_adjust(sys):
     # PID参数调整模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
@@ -587,6 +591,8 @@ def running_code(sys):
         program_mode_yolodetection_show(sys)
     elif current_program_mode == "yolo detection\nno buzzer":
         program_mode_yolodetection_show_no_buzzer(sys)
+    elif current_program_mode == "yolo detection\nvc show\nmake datasets":
+        program_mode_yolodetection_show_make_datasets(sys)
     elif current_program_mode =="yolo detection\nno image no buzzer":
         program_mode_yolodetection_no_show_no_buzzer(sys)
     elif current_program_mode == "yolo detection\nfeedforward_control":

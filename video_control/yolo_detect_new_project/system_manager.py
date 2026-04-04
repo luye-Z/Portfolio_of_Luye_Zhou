@@ -51,6 +51,7 @@ class SystemManager:
                                      "PID_parameter\nadjust",
                                      "Kalman_test",
                                      "yolo detection\nvc show",
+                                     "yolo detection\nvc show\nmake datasets",
                                      "yolo detection\nno image",
                                      "yolo detection\nno buzzer",
                                      "yolo detection\nno image no buzzer",
@@ -190,18 +191,20 @@ class SystemManager:
         elif self.current_program_mode == self.program_mode_storage[3]:
             display_text = "RUNNING:\nPID show"
         elif self.current_program_mode == self.program_mode_storage[4]:
-            display_text = "RUNNING:\nPID no show"
+            display_text = "RUNNING:\nyolo detection\nvc show\nmake datasets"
         elif self.current_program_mode == self.program_mode_storage[5]:
-            display_text = "RUNNING:\nPID show no buzzer"
+            display_text = "RUNNING:\nPID no show"
         elif self.current_program_mode == self.program_mode_storage[6]:
-            display_text = "RUNNING:\nPID no image\nno buzzer"
+            display_text = "RUNNING:\nPID show no buzzer"
         elif self.current_program_mode == self.program_mode_storage[7]:
-            display_text = "RUNNING:\nfeedforward\nno image"                         
+            display_text = "RUNNING:\nPID no image\nno buzzer"
         elif self.current_program_mode == self.program_mode_storage[8]:
-            display_text = "RUNNING:\nDraw charts Only_PID"   
+            display_text = "RUNNING:\nfeedforward\nno image"                         
         elif self.current_program_mode == self.program_mode_storage[9]:
-            display_text = "RUNNING:\nDraw charts kalman"
+            display_text = "RUNNING:\nDraw charts Only_PID"   
         elif self.current_program_mode == self.program_mode_storage[10]:
+            display_text = "RUNNING:\nDraw charts kalman"
+        elif self.current_program_mode == self.program_mode_storage[11]:
             display_text = "RUNNING:\nDraw charts feedforward"
 
         
