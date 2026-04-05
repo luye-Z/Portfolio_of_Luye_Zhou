@@ -19,7 +19,7 @@ class SystemManager:
     """系统管理器，整合所有硬件驱动"""
     
     def __init__(self):
-        MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/0207_quadcopter_yolo26_ncnn_model"
+        MODEL_PATH = "/home/pi/projects/yolo26/model_folder/ncnn_format_model/640_imgsz_ncnn_model/yolo26n_quadcopter_0405_ncnn_model"
         self.buzzer = BuzzerController()
         self.oled = OLEDDriver()
         self.laser_sensor = VL53L0X_Threaded()
