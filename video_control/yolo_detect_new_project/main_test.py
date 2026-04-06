@@ -117,7 +117,7 @@ def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_c
     
 
 
-def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.37, kp_tilt_set=0.40, kd_pan_set=0.14, kd_tilt_set=0.16): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.37, kp_tilt_set=0.42, kd_pan_set=0.14, kd_tilt_set=0.20): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #YOLO检测模式，基础模式，不显示图像。
     #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
     annotated_frame = None
@@ -191,11 +191,11 @@ def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buz
 
 def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
     #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
-    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=False,activate_screen_show=False,kd_pan_set=0.20, kd_tilt_set=0.20)
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=False,activate_screen_show=False,kp_pan_set=0.37, kp_tilt_set=0.38, kd_pan_set=0.14, kd_tilt_set=0.16)
 
 def program_mode_yolodetection_show(sys):
     #YOLO检测模式，显示图像，蜂鸣器开启，不使用卡尔曼滤波预测
-    program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=True)   
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=True)   
 
 def program_mode_yolodetection_no_show_no_buzzer(sys):
     #YOLO检测模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测

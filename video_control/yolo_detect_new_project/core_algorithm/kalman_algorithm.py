@@ -76,7 +76,7 @@ class Kalman2DTracker:
 
         # 值越小，系统越认为目标是在匀速走直线，轨迹越平滑，但对目标突然转向的响应越慢。
 
-        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 1.5
+        self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 3
 
        
 
