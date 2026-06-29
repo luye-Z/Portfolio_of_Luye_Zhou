@@ -1,0 +1,468 @@
+import cv2
+import time
+from yolo_predict import YOLODetector
+from system_manager import SystemManager
+import os
+import csv
+from datetime import datetime
+
+
+#main函数测试版 ，主要功能，是创建一个runing_code 函数 ，去实现各种功能逻辑的调用
+def cv_show(frame, results, sys):
+    """
+    极简显示函数：针对树莓派深度优化版
+    """
+    # [核心优化 1]：零拷贝 (Zero-copy) 原则
+    # 移除 frame.copy()，直接在原图上绘制。如果其他环节不需要纯净帧，这是最省内存带宽的做法。
+    annotated_frame = frame 
+    
+    # 1. 确保结果不为空
+    if len(results) == 0 or len(results[0].boxes) == 0:
+        cv2.imshow("YOLO Detection", annotated_frame)
+    else:
+        # [核心优化 2]：将张量一次性推入 CPU 并转为 NumPy 数组
+        # 避免在 for 循环中反复调用 .tolist() 和 .item()，大幅减少 Python 解释器与底层 C++ 的通信开销
+        boxes = results[0].boxes
+        xyxy_array = boxes.xyxy.cpu().numpy()
+        conf_array = boxes.conf.cpu().numpy()
+        cls_array = boxes.cls.cpu().numpy()
+        
+        # [核心优化 3]：将常量计算提至循环外，避免在每一次目标检测时重复计算浮点乘法
+        max_w = sys.detector.SCREEN_WIDTH * 0.55
+        max_h = sys.detector.SCREEN_HEIGHT * 0.55
+        
+        # 2. 绘制检测框
+        for i in range(len(xyxy_array)):
+            # 直接从 NumPy 数组中解包，速度极快
+            x1, y1, x2, y2 = xyxy_array[i]
+            conf = conf_array[i]
+            cls = int(cls_array[i])
+            
+            w, h = x2 - x1, y2 - y1
+            
+            # 过滤逻辑
+            if w >= max_w or h >= max_h:
+                continue
+            
+            # 统一转为整型坐标，供 OpenCV 绘制使用
+            ix1, iy1, ix2, iy2 = int(x1), int(y1), int(x2), int(y2)
+            
+            # 画矩形框
+            cv2.rectangle(annotated_frame, (ix1, iy1), (ix2, iy2), (0, 255, 0), 2)
+            
+            # 简易标签
+            label = f"ID:{cls} {conf:.2f}"
+            cv2.putText(annotated_frame, label, (ix1, iy1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        
+        # 显示带框图像
+        cv2.imshow("YOLO Detection", annotated_frame)
+    
+    # 3. 退出逻辑：按 'q' 键退出
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
+        return True
+    
+    return False
+
+def pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12):
+    #工具函数，根据YOLO检测到的目标位置，更新舵机跟踪角度
+    # 调用舵机控制器跟踪目标
+        #直接从detector类里面获取目标中心坐标,yolo_predict.py文件里面定义的这个类，只有这一个类
+        
+        # obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        # 调用 PID 控制器计算角度
+        
+        #为了给予每种模式不同的PID参数，在这里添加PID参数更新函数
+        if obj_target_center_x is None or obj_target_center_y is None:
+            return
+        
+        sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
+        
+        sys.pid_controller.pid_control_calculate(
+            obj_target_center_x, 
+            obj_target_center_y
+        )
+         # 获取 PID 控制器输出
+        pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+        #控制舵机运动
+        sys.servo_controller.set_pan_angle(pan_controller_output)
+        sys.servo_controller.set_tilt_angle(tilt_controller_output)
+        
+        
+def update_servo_tracking_add_feedforward(sys, obj_target_center_x, obj_target_center_y, kp_pan=0.35, kp_tilt=0.30, kd_pan=0.15, kd_tilt=0.12, Kff_pan=0.05, Kff_tilt=0.04):    
+    # 工具函数：根据YOLO检测到的目标位置，更新舵机跟踪角度（包含PID与前馈控制）
+    #只在前馈控制模式下使用
+    # 1. 基础空值检查：如果没检测到目标，直接退出
+    if obj_target_center_x is None or obj_target_center_y is None:
+        # 【关键保护】：目标丢失时，必须清空前馈的历史记忆，防止重捕获时计算出巨大的瞬间误差
+        sys.pid_controller.feedforward_last_target_x = None
+        sys.pid_controller.feedforward_last_target_y = None
+        return
+        
+    # 2. 更新控制参数（PID 和 前馈参数）
+    sys.pid_controller.pid_parameters_update(kp_pan, kp_tilt, kd_pan, kd_tilt)
+    sys.pid_controller.pid_feedforward_parameters_update(Kff_pan, Kff_tilt)
+    
+    # 3. 调用控制器计算角度
+    sys.pid_controller.pid_control_calculate(obj_target_center_x, obj_target_center_y)
+    sys.pid_controller.feed_forward_control_calculate(obj_target_center_x, obj_target_center_y)
+     
+    # 4. 获取最终的控制器输出
+    pan_controller_output, tilt_controller_output = sys.pid_controller.get_PID_controller_output()
+    
+    # 5. 控制舵机运动
+    sys.servo_controller.set_pan_angle(pan_controller_output)
+    sys.servo_controller.set_tilt_angle(tilt_controller_output)        
+    
+
+
+def program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False,kp_pan_set=0.37, kp_tilt_set=0.42, kd_pan_set=0.14, kd_tilt_set=0.20): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+    #YOLO检测模式，基础模式，不显示图像。
+    #通过参数控制是否使用卡尔曼滤波预测，默认不使用，是否开启蜂鸣器，默认开启，是否显示屏幕，默认不显示
+    annotated_frame = None
+    result = None
+    
+    #打印串口标志位，为了限制打印次数，节省CPU性能，不再每一帧都打印信息
+    PRINT_INTERVAL_FRAMES = 20 #打印间隔帧数
+    sys.print_open_restrict_count += 1   
+     
+    
+    # sys.limit_predict_endurance = 2 #限制卡尔曼滤波预测的持续时间，单位为帧
+    # sys.lost_yolo_detetect_count = 0 #记录丢失目标的次数，用于判断是否需要调用卡尔曼滤波预测
+    # YOLO 检测模式：调用 detect_frame
+    # print("YOLO 检测模式")
+    
+    # 调用 YOLO 检测（只调用一次！）
+    result, annotated_frame = sys.detector.detect_frame()
+
+    # 检查是否检测到目标
+    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
+        
+        sys.lost_yolo_detetect_count = 0 #如果检测到目标，重置丢失目标次数
+        
+        # 调用工具函数，更新舵机跟踪角度
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+
+        if activate_kalman_filter:
+            obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y = sys.kalman_tracker.update_and_output(obj_target_center_x, obj_target_center_y)
+            # obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y = deadzone_filtration(sys, obj_target_kalman_adjust_center_x, obj_target_kalman_adjust_center_y, deadzone_portion=0.01)
+            pid_control_servos(sys,obj_target_kalman_adjust_center_x,obj_target_kalman_adjust_center_y, kp_pan_set, kp_tilt_set, kd_pan_set, kd_tilt_set)
+        else:
+            # obj_target_center_x,obj_target_center_y =  deadzone_filtration(sys,obj_target_center_x,obj_target_center_y,deadzone_portion=0.01)
+            pid_control_servos(sys,obj_target_center_x,obj_target_center_y, kp_pan_set, kp_tilt_set, kd_pan_set, kd_tilt_set)
+        
+
+        #activate indicator led and buzzer
+        sys.rgb_led.set_color_name("red")
+        
+        if activate_buzzer:
+            sys.buzzer.start_alarm()
+        
+        
+        current_d = sys.laser_sensor.distance
+        # obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        #打印部分：
+        if sys.print_open_restrict_count >= PRINT_INTERVAL_FRAMES:
+            # 极简英文输出，减少终端滚动压力
+            print(f"[LOG] Dist:{current_d}mm | Center:({obj_target_center_x:.1f},{obj_target_center_y:.1f})")
+            sys.print_open_restrict_count = 0 #重置打印次数
+    else:
+        # 调用卡尔曼滤波控制的预测接口
+        sys.lost_yolo_detetect_count += 1 #丢失目标次数加1
+
+
+        #采用降级控制策略
+        if activate_kalman_filter and sys.lost_yolo_detetect_count <= sys.limit_predict_endurance: #如果开启了卡尔曼滤波，才调用预测接口
+            predicted_x, predicted_y = sys.kalman_tracker.predict_only()
+            pid_control_servos(sys,predicted_x,predicted_y, kp_pan=0.10, kp_tilt=0.08, kd_pan=0, kd_tilt=0)#使用卡尔曼滤波预测的坐标来控制舵机
+        
+        # print("未检测到目标")
+        # 停止蜂鸣器报警
+        sys.buzzer.stop_alarm()
+        sys.rgb_led.set_color_name("green")
+    
+
+    
+    if annotated_frame is not None and result is not None and activate_screen_show:
+        cv_show(annotated_frame, result, sys)
+        
+
+def program_mode_kalman_test(sys): #添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+    #卡尔曼滤波测试模式，开启卡尔曼滤波预测，不显示图像，蜂鸣器开启
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=False,activate_screen_show=False,kp_pan_set=0.37, kp_tilt_set=0.38, kd_pan_set=0.14, kd_tilt_set=0.16)
+
+def program_mode_yolodetection_show(sys):
+    #YOLO检测模式，显示图像，蜂鸣器开启，不使用卡尔曼滤波预测
+    program_mode_yolo_detection(sys , activate_kalman_filter=True, activate_buzzer=True,activate_screen_show=True)   
+
+def program_mode_yolodetection_no_show_no_buzzer(sys):
+    #YOLO检测模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=False)
+    
+def program_mode_yolodetection_show_no_buzzer(sys):   
+    #YOLO检测模式，显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)   
+
+def program_mode_yolodetection_show_make_datasets(sys):
+    #YOLO检测模式，显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测，制作数据集
+    program_mode_yolo_detection(sys , activate_buzzer=False,activate_screen_show=True)
+
+def program_mode_PID_parameter_adjust(sys):
+    # PID参数调整模式，不显示图像，不开启蜂鸣器，不使用卡尔曼滤波预测
+    # 添加终端输入输出框，让用户可以输入PID值进行在线调参
+    
+    # 检查是否已经设置了PID参数（第一次进入该模式时）
+    if not hasattr(sys, '_pid_params_set') or not sys._pid_params_set:
+        print("\n" + "="*50)
+        print("PID参数调整模式")
+        print("请输入PID参数（按回车使用默认值，输入 'q' 重新开始）")
+        print("="*50)
+        
+        # 输入循环，允许用户按 'q' 重新输入
+        while True:
+            try:
+                # 获取用户输入
+                kp_pan_input = input("请输入 kp_pan (默认: 0.35): ").strip()
+                if kp_pan_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                kp_tilt_input = input("请输入 kp_tilt (默认: 0.35): ").strip()
+                if kp_tilt_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                kd_pan_input = input("请输入 kd_pan (默认: 0.08): ").strip()
+                if kd_pan_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                kd_tilt_input = input("请输入 kd_tilt (默认: 0.08): ").strip()
+                if kd_tilt_input.lower() == 'q':
+                    print("重新输入所有参数...")
+                    continue
+                
+                # 解析输入，如果为空则使用默认值
+                kp_pan = float(kp_pan_input) if kp_pan_input else 0.35
+                kp_tilt = float(kp_tilt_input) if kp_tilt_input else 0.35
+                kd_pan = float(kd_pan_input) if kd_pan_input else 0.08
+                kd_tilt = float(kd_tilt_input) if kd_tilt_input else 0.08
+                
+                # 存储参数到系统管理器
+                sys._pid_params = (kp_pan, kp_tilt, kd_pan, kd_tilt)
+                sys._pid_params_set = True
+                
+                print(f"\n已设置PID参数: kp_pan={kp_pan}, kp_tilt={kp_tilt}, kd_pan={kd_pan}, kd_tilt={kd_tilt}")
+                print("按回车开始运行...")
+                input()  # 等待用户确认
+                break  # 输入成功，退出循环
+                
+            except ValueError:
+                print("输入无效，请重新输入所有参数（或按 'q' 重新开始）")
+                # 继续循环重新输入
+    
+    # 使用存储的PID参数运行YOLO检测
+    kp_pan, kp_tilt, kd_pan, kd_tilt = sys._pid_params
+    program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False,
+                                kp_pan_set=kp_pan, kp_tilt_set=kp_tilt,
+                                kd_pan_set=kd_pan, kd_tilt_set=kd_tilt)
+
+def program_mode_feedforward_control_test(sys , activate_buzzer=False,activate_screen_show=False):
+    #YOLO检测模式，基础模式，不显示图像。
+    
+    annotated_frame = None
+    result = None
+            
+
+    # YOLO 检测模式：调用 detect_frame
+    print("YOLO 检测模式")
+    
+    # 调用 YOLO 检测（只调用一次！）
+    result, annotated_frame = sys.detector.detect_frame()
+
+    # 检查是否检测到目标
+    #这里使用与操作符，是再次检测，确保当前模式是yolo detection\nno image，防止切换为菜单模式，蜂鸣器依旧鸣叫
+    if sys.detector.get_if_target_detected() and sys.get_program_mode() != "program menu":
+        
+        # 调用工具函数，更新舵机跟踪角度
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        update_servo_tracking_add_feedforward(sys,obj_target_center_x,obj_target_center_y)
+        
+
+        #activate indicator led and buzzer
+        sys.rgb_led.set_color_name("red")
+        
+        if activate_buzzer:
+            sys.buzzer.start_alarm()
+        
+        
+        current_d = sys.laser_sensor.distance
+        print(f"激光测距距离: {current_d} mm")
+        obj_target_center_x, obj_target_center_y = sys.detector.get_target_center()
+        print(f"目标的中心坐标是({obj_target_center_x:.2f}, {obj_target_center_y:.2f})")
+    else:
+        print("未检测到目标")
+        # 停止蜂鸣器报警
+        sys.buzzer.stop_alarm()
+        sys.rgb_led.set_color_name("green")
+    
+
+    
+    if annotated_frame is not None and result is not None and activate_screen_show:
+        cv_show(annotated_frame, result, sys)
+
+
+# def program_mode_draw_record_chart(sys):
+#     """
+#     绘制记录图表模式
+#     基于 YOLO 检测模式，把每一次检测到的目标中心点坐标记录到文件中。
+#     在当前路径下新建 detection_records 文件夹，按时间戳新建 CSV 文件。
+#     """
+    
+
+
+
+#NEW版本函数，添加了参数控制，可以控制是否开启蜂鸣器和屏幕显示
+#func参数为可选的回调函数，用于在绘制记录图表前执行自定义操作，不显式传参，则默认使用program_mode_yolo_detection
+def program_mode_draw_record_chart_new(sys, func = None , insert_filename_str = "" ):
+    # 1. ========== 初始化记录文件路径 (CSV) ==========
+    if not hasattr(sys, '_record_file_path') or sys._record_file_path is None:
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
+        record_dir = os.path.join(
+            current_script_dir, 
+            "detection_records_analyse", 
+            "detection_records"
+        )
+        
+        if not os.path.exists(record_dir):
+            os.makedirs(record_dir)
+            
+        # 生成带日期和时间的文件名
+        file_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"data_record_{file_timestamp}_{insert_filename_str}.csv"
+        sys._record_file_path = os.path.join(record_dir, filename)
+        
+        # 写入表头，增加 'timestamp' 列
+        with open(sys._record_file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'target_x', 'target_y', 'error_x', 'error_y','p_out_delta_x','p_out_delta_y','pid_out_x', 'pid_out_y'])
+
+    # 2. ========== 执行 YOLO 检测与控制 ==========
+    
+    if func is None:
+        program_mode_yolo_detection(sys, activate_buzzer=False, activate_screen_show=False)
+    elif callable(func):
+        func(sys)
+    else:
+        print("错误：传入的 func 不是一个可执行的函数")
+        
+    # 3. ========== 获取数据并写入 ==========
+    try:
+        # --- 获取当前行的时间戳 (时:分:秒.毫秒) ---
+        now_time = datetime.now().strftime("%H:%M:%S.%f")[:-3] 
+
+        # 获取原始数值
+        target_center = sys.detector.get_target_center()
+        t_x, t_y = target_center if target_center else (0.0, 0.0)
+        
+        p_out_x, p_out_y = sys.pid_controller.get_PID_controller_output()
+        
+        p_out_delta_x, p_out_delta_y = sys.pid_controller.get_pid_controller_middleware_output()
+        
+        err_x = sys.pid_controller.error_x if hasattr(sys.pid_controller, 'error_x') else 0.0
+        err_y = sys.pid_controller.error_y if hasattr(sys.pid_controller, 'error_y') else 0.0
+
+        # 格式化数值精度
+        values = [t_x, t_y, err_x, err_y,p_out_delta_x, p_out_delta_y, p_out_x, p_out_y]
+        formatted_values = [f"{val:.3f}" for val in values]
+
+        # 组合最终写入行：[时间, x, y, err_x, err_y, out_x, out_y]
+        final_row = [now_time] + formatted_values
+
+        with open(sys._record_file_path, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(final_row)
+            
+    except Exception as e:
+        print(f"写入记录失败: {e}")
+
+
+
+
+
+
+
+ 
+def running_code(sys):
+    current_program_mode = sys.get_program_mode()
+    
+    # 【新增逻辑】：检查模式是否发生了切换
+    # 如果当前模式和上次记录的模式不一样，说明是刚切换过来的，这时才重置路径
+    if not hasattr(sys, '_last_mode'):
+        sys._last_mode = None
+    
+    is_mode_changed = (current_program_mode != sys._last_mode)
+    if is_mode_changed:
+        sys._record_file_path = None  # 只有切换模式时才清空路径，触发新建文件
+        # 重置PID参数标志，以便在PID参数调整模式下重新提示用户输入
+        if hasattr(sys, '_pid_params_set'):
+            delattr(sys, '_pid_params_set')
+        sys._last_mode = current_program_mode # 更新旧模式记录
+        print(f">>> 模式切换至: {current_program_mode}，已重置记录文件。")
+
+    # --- 以下是原有的逻辑，去掉里面的 sys._record_file_path = None ---
+
+    if current_program_mode == "yolo detection\nno image":
+        program_mode_yolo_detection(sys , activate_kalman_filter=False, activate_buzzer=True,activate_screen_show=False)
+    elif current_program_mode == "PID_parameter\nadjust":
+        program_mode_PID_parameter_adjust(sys)
+    elif current_program_mode == "yolo detection\nvc show":
+        program_mode_yolodetection_show(sys)
+    elif current_program_mode == "yolo detection\nno buzzer":
+        program_mode_yolodetection_show_no_buzzer(sys)
+    elif current_program_mode == "yolo detection\nvc show\nmake datasets":
+        program_mode_yolodetection_show_make_datasets(sys)
+    elif current_program_mode =="yolo detection\nno image no buzzer":
+        program_mode_yolodetection_no_show_no_buzzer(sys)
+    elif current_program_mode == "yolo detection\nfeedforward_control":
+        program_mode_feedforward_control_test(sys)
+    elif current_program_mode =="draw_record_chart\nOnly_PID":
+        # 删掉了这里的 sys._record_file_path = None
+        program_mode_draw_record_chart_new(sys, func=program_mode_yolodetection_no_show_no_buzzer, insert_filename_str="Only_PID")
+    elif current_program_mode == "draw_record_chart\nkalman":
+        # 删掉了这里的 sys._record_file_path = None
+        program_mode_draw_record_chart_new(sys, func=program_mode_kalman_test, insert_filename_str="kalman")
+    elif current_program_mode == "draw_record_chart\nfeedforward_control":
+        # 删掉了这里的 sys._record_file_path = None
+        program_mode_draw_record_chart_new(sys, func=program_mode_feedforward_control_test, insert_filename_str="feedforward_control")
+    elif current_program_mode == "Kalman_test":
+        program_mode_kalman_test(sys)
+
+
+
+        
+    
+        
+
+if __name__ == "__main__":
+    # 1. 初始化系统管理器
+    with SystemManager() as sys:
+        # ✅ 删除了循环前的 detect_frame() 调用
+        # 这样可以避免改变初始状态标志位
+        sys.program_mode_manager_oled_show()
+        
+        # 性能监控变量
+        frame_count = 0
+        start_time = time.time()
+        last_print_time = start_time
+        
+        while True:
+            running_code(sys)
+            
+            # 性能监控
+            frame_count += 1
+            current_time = time.time()
+            
+

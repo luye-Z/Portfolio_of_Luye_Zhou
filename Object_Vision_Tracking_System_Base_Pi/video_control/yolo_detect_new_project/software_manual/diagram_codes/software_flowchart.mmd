@@ -1,0 +1,450 @@
+# YOLO 检测与跟踪系统 - 深度软件流程图
+
+## 1. 系统整体架构图
+
+```mermaid
+flowchart TD
+    subgraph "硬件层"
+        CAM[树莓派摄像头]
+        SERVO[舵机云台]
+        BUZZER[蜂鸣器]
+        OLED[OLED显示屏]
+        LED[RGB LED]
+        LASER[VL53L0X激光测距]
+        MPU[MPU6050姿态传感器]
+        BUTTON[物理按键]
+    end
+    
+    subgraph "驱动层"
+        YOLO[YOLO检测器]
+        SERVO_DRV[舵机控制器]
+        BUZZER_DRV[蜂鸣器控制器]
+        OLED_DRV[OLED驱动]
+        LED_DRV[RGB LED控制器]
+        LASER_DRV[激光测距驱动]
+        MPU_DRV[MPU6050驱动]
+        BUTTON_DRV[按键驱动]
+    end
+    
+    subgraph "管理层"
+        SM[SystemManager<br/>系统管理器]
+        MODE[程序模式管理器]
+        OLED_THREAD[OLED更新线程]
+        LASER_THREAD[激光测距线程]
+    end
+    
+    subgraph "应用层"
+        MAIN[主程序循环]
+        DETECT[目标检测逻辑]
+        TRACK[目标跟踪逻辑]
+        UI[用户界面]
+    end
+    
+    CAM --> YOLO
+    BUTTON --> BUTTON_DRV
+    
+    YOLO --> SM
+    SERVO_DRV --> SM
+    BUZZER_DRV --> SM
+    OLED_DRV --> SM
+    LED_DRV --> SM
+    LASER_DRV --> SM
+    MPU_DRV --> SM
+    BUTTON_DRV --> SM
+    
+    SM --> MAIN
+    SM --> MODE
+    SM --> OLED_THREAD
+    SM --> LASER_THREAD
+    
+    MAIN --> DETECT
+    MAIN --> TRACK
+    MAIN --> UI
+    
+    DETECT --> SERVO_DRV --> SERVO
+    TRACK --> SERVO_DRV --> SERVO
+    UI --> OLED_DRV --> OLED
+    UI --> LED_DRV --> LED
+    UI --> BUZZER_DRV --> BUZZER
+```
+
+## 2. 程序模式状态机（深度）
+
+```mermaid
+stateDiagram-v2
+    [*] --> MenuMode : 系统启动
+    state MenuMode {
+        [*] --> Idle
+        Idle --> Navigate : 短按
+        Navigate --> Navigate : 短按循环
+        Navigate --> Idle : 显示更新
+        
+        state Navigate {
+            [*] --> Mode1
+            Mode1 --> Mode2 : 短按
+            Mode2 --> Mode3 : 短按
+            Mode3 --> Mode4 : 短按
+            Mode4 --> Mode5 : 短按
+            Mode5 --> Mode1 : 短按
+        }
+    }
+    
+    MenuMode --> DetectionWithDisplay : 双击选择模式1
+    MenuMode --> HeadlessMode : 双击选择模式2
+    MenuMode --> DetectionNoBuzzer : 双击选择模式3
+    MenuMode --> HeadlessNoBuzzer : 双击选择模式4
+    MenuMode --> DrawCharts : 双击选择模式5
+    
+    DetectionWithDisplay --> MenuMode : 长按返回
+    HeadlessMode --> MenuMode : 长按返回
+    DetectionNoBuzzer --> MenuMode : 长按返回
+    HeadlessNoBuzzer --> MenuMode : 长按返回
+    DrawCharts --> MenuMode : 长按返回
+    
+    state DetectionWithDisplay {
+        [*] --> YOLODetection
+        YOLODetection --> SmartControl : 切换标志
+        SmartControl --> YOLODetection : 切换标志
+        
+        state YOLODetection {
+            [*] --> CaptureFrame
+            CaptureFrame --> Inference
+            Inference --> ParseResults
+            ParseResults --> UpdateSmartParams
+            UpdateSmartParams --> [*]
+        }
+        
+        state SmartControl {
+            [*] --> GetLastCoords
+            GetLastCoords --> PredictPosition
+            PredictPosition --> Track
+            Track --> [*]
+        }
+    }
+    
+    state HeadlessMode {
+        [*] --> YOLODetectionNoDisplay
+        YOLODetectionNoDisplay --> SmartControlNoDisplay
+        SmartControlNoDisplay --> YOLODetectionNoDisplay
+    }
+```
+
+## 3. 按键事件处理深度流程图
+
+```mermaid
+flowchart TD
+    Start([按键事件触发]) --> GPIO_Int[GPIO中断检测]
+    GPIO_Int --> ReadPin[读取引脚电平]
+    
+    ReadPin --> IsHigh{电平为高?}
+    
+    IsHigh -->|是| PressEvent[按下事件]
+    PressEvent --> RecordPressTime[记录按下时间]
+    RecordPressTime --> CancelDoubleTimer[取消双击定时器]
+    CancelDoubleTimer --> EndPress([按下处理完成])
+    
+    IsHigh -->|否| ReleaseEvent[释放事件]
+    ReleaseEvent --> CalcDuration[计算按下持续时间]
+    
+    CalcDuration --> CheckLong{持续时间 ≥ 1.0秒?}
+    CheckLong -->|是| LongPress[执行长按回调]
+    LongPress --> CleanupHardware[清理硬件状态<br/>蜂鸣器停止、LED关闭、舵机复位]
+    CleanupHardware --> ReturnToMenu[返回菜单模式]
+    ReturnToMenu --> UpdateOLED[强制更新OLED显示]
+    UpdateOLED --> EndLong([长按处理完成])
+    
+    CheckLong -->|否| CheckDouble{与上次释放间隔 < 0.4秒?}
+    CheckDouble -->|是| DoubleClick[执行双击回调]
+    DoubleClick --> ClearReleaseTime[清空释放时间记录]
+    ClearReleaseTime --> EnterSelectedMode[进入选中的程序模式]
+    EnterSelectedMode --> UpdateOLED2[强制更新OLED显示]
+    UpdateOLED2 --> EndDouble([双击处理完成])
+    
+    CheckDouble -->|否| PossibleShort[可能是短按]
+    PossibleShort --> RecordReleaseTime[记录释放时间]
+    RecordReleaseTime --> StartTimer[启动0.3秒定时器]
+    
+    StartTimer --> TimerRunning{定时器运行中}
+    TimerRunning --> AnotherPress{有新的按下事件?}
+    AnotherPress -->|是| CancelTimer[取消定时器<br/>转为双击检测]
+    CancelTimer --> DoubleClick
+    
+    AnotherPress -->|否| TimerExpired{0.3秒到期?}
+    TimerExpired -->|是| ConfirmShort[确认为短按]
+    ConfirmShort --> IncrementMenuIndex[菜单索引+1]
+    IncrementMenuIndex --> WrapAround{索引超出范围?}
+    WrapAround -->|是| ResetIndex[重置索引为1]
+    WrapAround -->|否| KeepIndex[保持当前索引]
+    
+    ResetIndex --> UpdateOLED3[强制更新OLED显示]
+    KeepIndex --> UpdateOLED3
+    UpdateOLED3 --> EndShort([短按处理完成])
+```
+
+## 4. 主程序循环深度流程图（含模式切换）
+
+```mermaid
+flowchart TD
+    Start([程序启动]) --> InitSM[初始化SystemManager]
+    InitSM --> EnterContext[进入上下文管理器]
+    
+    EnterContext --> StartCamera[启动相机]
+    StartCamera --> StartSensors[启动传感器线程]
+    StartSensors --> InitOLED[初始化OLED显示]
+    
+    InitOLED --> CheckMode{检查当前程序模式}
+    
+    CheckMode -->|菜单模式| MenuLoop[菜单循环]
+    MenuLoop --> UpdateOLEDMenu[更新OLED菜单显示]
+    UpdateOLEDMenu --> WaitInput[等待按键输入]
+    WaitInput --> CheckMode
+    
+    CheckMode -->|运行模式| MainLoop[主检测循环]
+    
+    MainLoop --> GetCurrentMode{获取具体运行模式}
+    
+    GetCurrentMode -->|模式1: 检测+显示| Mode1Flow
+    GetCurrentMode -->|模式2: 无头模式| Mode2Flow
+    GetCurrentMode -->|模式3: 检测无蜂鸣器| Mode3Flow
+    GetCurrentMode -->|模式4: 无头无蜂鸣器| Mode4Flow
+    GetCurrentMode -->|模式5: 绘制图表| Mode5Flow
+    
+    subgraph Mode1Flow [检测+显示模式]
+        M1_CheckTurn{检测模式标志}
+        M1_CheckTurn -->|YOLO检测| M1_YOLO[执行YOLO检测]
+        M1_YOLO --> M1_UpdateParams[更新智能控制参数]
+        M1_UpdateParams --> M1_FlipFlag[翻转检测标志]
+        
+        M1_CheckTurn -->|智能控制| M1_Smart[智能预测控制]
+        M1_Smart --> M1_FlipFlag2[翻转检测标志]
+        
+        M1_FlipFlag --> M1_CheckTarget{检测到目标?}
+        M1_FlipFlag2 --> M1_CheckTarget
+        
+        M1_CheckTarget -->|是| M1_Track[舵机跟踪]
+        M1_Track --> M1_Alarm[蜂鸣器报警]
+        M1_Alarm --> M1_LEDRed[LED红色]
+        M1_LEDRed --> M1_Show[显示图像]
+        
+        M1_CheckTarget -->|否| M1_StopAlarm[停止报警]
+        M1_StopAlarm --> M1_LEDGreen[LED绿色]
+        M1_LEDGreen --> M1_Show
+    end
+    
+    subgraph Mode2Flow [无头模式]
+        M2_Similar[类似模式1但不显示图像]
+    end
+    
+    subgraph Mode3Flow [检测无蜂鸣器]
+        M3_Similar[类似模式1但禁用蜂鸣器]
+    end
+    
+    subgraph Mode4Flow [无头无蜂鸣器]
+        M4_Similar[类似模式2且禁用蜂鸣器]
+    end
+    
+    subgraph Mode5Flow [绘制图表模式]
+        M5_ReadData[读取检测记录]
+        M5_ReadData --> M5_Analyze[数据分析]
+        M5_Analyze --> M5_Plot[绘制图表]
+        M5_Plot --> M5_Save[保存结果]
+    end
+    
+    Mode1Flow --> CheckExit{检查退出条件}
+    Mode2Flow --> CheckExit
+    Mode3Flow --> CheckExit
+    Mode4Flow --> CheckExit
+    Mode5Flow --> CheckExit
+    
+    CheckExit -->|按下'q'键| ExitLoop[退出循环]
+    CheckExit -->|长按返回菜单| ReturnToMenu2[返回菜单模式]
+    CheckExit -->|继续运行| MainLoop
+    
+    ExitLoop --> Cleanup[清理资源]
+    ReturnToMenu2 --> CheckMode
+    
+    Cleanup --> ExitContext[退出上下文管理器]
+    ExitContext --> StopAll[停止所有硬件]
+    StopAll --> End([程序结束])
+```
+
+## 5. 智能控制模式深度流程图
+
+```mermaid
+flowchart TD
+    Start([智能控制模式开始]) --> GetHistory[获取历史坐标数据]
+    
+    GetHistory --> CheckDataValid{数据是否有效?<br/>last_x, last_y, now_x, now_y}
+    
+    CheckDataValid -->|无效| UseDefault[使用默认值/屏幕中心]
+    UseDefault --> OutputDefault[输出默认坐标]
+    
+    CheckDataValid -->|有效| CalculateDelta[计算位移增量]
+    CalculateDelta --> DeltaX[dx = now_x - last_x]
+    DeltaX --> DeltaY[dy = now_y - last_y]
+    
+    DeltaY --> Predict[预测下一帧位置]
+    Predict --> PredX[pred_x = now_x + dx]
+    PredX --> PredY[pred_y = now_y + dy]
+    
+    PredY --> BoundaryCheck{预测位置边界检查}
+    
+    BoundaryCheck -->|超出左边界| ClampLeft[clamp到左边界]
+    BoundaryCheck -->|超出右边界| ClampRight[clamp到右边界]
+    BoundaryCheck -->|超出上边界| ClampTop[clamp到上边界]
+    BoundaryCheck -->|超出下边界| ClampBottom[clamp到下边界]
+    BoundaryCheck -->|在边界内| KeepPredicted[保持预测值]
+    
+    ClampLeft --> OutputFinal
+    ClampRight --> OutputFinal
+    ClampTop --> OutputFinal
+    ClampBottom --> OutputFinal
+    KeepPredicted --> OutputFinal
+    
+    OutputDefault --> OutputFinal[输出最终坐标]
+    
+    OutputFinal --> UpdateHistory[更新历史数据]
+    UpdateHistory --> LastToNow[last_x = now_x, last_y = now_y]
+    LastToNow --> NowToPred[now_x = pred_x, now_y = pred_y]
+    
+    NowToPred --> End([智能控制完成])
+```
+
+## 6. 系统资源管理流程图
+
+```mermaid
+flowchart TD
+    Start([资源管理开始]) --> InitPhase[初始化阶段]
+    
+    subgraph InitPhase [按顺序初始化]
+        I1[初始化GPIO]
+        I2[初始化I2C总线]
+        I3[初始化PWM]
+        I4[初始化相机]
+        I5[初始化YOLO模型]
+        I6[初始化传感器]
+        I7[启动后台线程]
+    end
+    
+    I1 --> I2 --> I3 --> I4 --> I5 --> I6 --> I7
+    
+    I7 --> RunningPhase[运行阶段]
+    
+    subgraph RunningPhase [运行时资源管理]
+        R1[OLED更新队列管理]
+        R2[激光测距线程管理]
+        R3[蜂鸣器状态管理]
+        R4[LED状态管理]
+        R5[舵机角度管理]
+        R6[内存管理]
+    end
+    
+    R1 --> R2 --> R3 --> R4 --> R5 --> R6
+    
+    RunningPhase --> CleanupPhase[清理阶段]
+    
+    subgraph CleanupPhase [按逆序清理]
+        C1[停止所有线程]
+        C2[关闭相机]
+        C3[复位舵机]
+        C4[关闭LED]
+        C5[停止蜂鸣器]
+        C6[关闭传感器]
+        C7[清理GPIO]
+        C8[关闭I2C/PWM]
+    end
+    
+    C1 --> C2 --> C3 --> C4 --> C5 --> C6 --> C7 --> C8
+    
+    C8 --> End([资源管理完成])
+```
+
+## 7. 多线程协同工作流程图
+
+```mermaid
+flowchart TD
+    subgraph "主线程 (Main Thread)"
+        MT1[初始化系统]
+        MT2[主循环控制]
+        MT3[模式切换决策]
+        MT4[用户输入处理]
+        MT5[资源清理]
+    end
+    
+    subgraph "OLED更新线程"
+        OT1[等待更新队列]
+        OT2[检查更新条件]
+        OT3[执行I2C通信]
+        OT4[更新显示缓存]
+    end
+    
+    subgraph "激光测距线程"
+        LT1[初始化传感器]
+        LT2[循环测量]
+        LT3[更新距离数据]
+        LT4[错误处理]
+    end
+    
+    subgraph "蜂鸣器控制线程"
+        BT1[等待报警事件]
+        BT2[控制GPIO输出]
+        BT3[定时鸣叫]
+        BT4[停止信号处理]
+    end
+    
+    subgraph "MPU6050读取线程"
+        MP1[校准传感器]
+        MP2[循环读取数据]
+        MP3[互补滤波计算]
+        MP4[更新姿态数据]
+    end
+    
+    MT1 --> MT2
+    MT2 --> MT3
+    MT3 --> MT4
+    MT4 --> MT2
+    
+    MT2 -.-> OT1
+    MT3 -.-> OT2
+    MT4 -.-> OT3
+    
+    MT2 -.-> LT1
+    MT3 -.-> LT2
+    
+    MT2 -.-> BT1
+    MT3 -.-> BT2
+    
+    MT2 -.-> MP1
+    MT3 -.-> MP2
+    
+    MT5 --> StopAll[停止所有线程]
+    
+    StopAll -.-> OT4
+    StopAll -.-> LT4
+    StopAll -.-> BT4
+    StopAll -.-> MP4
+```
+
+## 总结与设计理念
+
+### 核心设计特点：
+1. **分层架构**：清晰的硬件层、驱动层、管理层、应用层分离
+2. **状态机驱动**：基于程序模式的状态机管理，支持灵活的模式切换
+3. **事件驱动**：按键事件触发状态转换，实现非阻塞用户交互
+4. **多线程协同**：关键硬件操作在独立线程中执行，避免阻塞主循环
+5. **资源生命周期管理**：使用上下文管理器确保资源的正确初始化和清理
+6. **智能控制算法**：结合YOLO检测和运动预测，实现平滑的目标跟踪
+
+### 模式切换的深刻意义：
+- **菜单模式**：提供用户友好的交互界面，通过OLED显示当前选项
+- **多种运行模式**：适应不同应用场景（调试、演示、无头运行等）
+- **无缝切换**：长按返回菜单，双击进入模式，短按导航菜单
+- **状态保持**：模式切换时自动清理硬件状态，避免状态残留
+
+### 性能优化策略：
+- **OLED更新优化**：使用队列和最小更新间隔，减少I2C通信开销
+- **检测模式交替**：YOLO检测和智能控制交替执行，平衡精度和性能
+- **线程安全设计**：使用锁和事件机制确保多线程数据一致性
+- **资源懒加载**：按需初始化硬件，减少启动时间
+
+该系统展示了嵌入式计算机视觉项目的完整架构设计，适用于需要实时目标检测、跟踪和用户交互的复杂应用场景。
